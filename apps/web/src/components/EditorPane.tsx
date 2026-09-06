@@ -3853,24 +3853,6 @@ const RichEditorPane = ({
               </button>
             </div>
             <div className="hidden items-center gap-1 lg:flex">
-              <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant={desktopFocusMode ? "soft" : "ghost"}
-                      aria-label={t(desktopFocusMode ? "editor.exitFocusMode" : "editor.enterFocusMode")}
-                      aria-pressed={desktopFocusMode}
-                      onClick={onToggleDesktopFocusMode}
-                    >
-                      {desktopFocusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    {t(desktopFocusMode ? "editor.exitFocusMode" : "editor.focusMode")}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
               <IconTooltip label={t("editor.previousMemo")}>
                 <Button size="icon" variant="ghost" aria-label={t("editor.previousMemo")} onClick={onOpenPreviousMemo} disabled={!hasPreviousMemo}>
                   <ChevronLeft className="h-4 w-4" />
@@ -4295,6 +4277,18 @@ const RichEditorPane = ({
                 </Button>
               </IconTooltip>
             )}
+            <Button
+              className="hidden shrink-0 lg:inline-flex"
+              size="sm"
+              variant={desktopFocusMode ? "soft" : "ghost"}
+              title={t(desktopFocusMode ? "editor.exitFocusMode" : "editor.enterFocusMode")}
+              aria-label={t(desktopFocusMode ? "editor.exitFocusMode" : "editor.enterFocusMode")}
+              aria-pressed={desktopFocusMode}
+              onClick={onToggleDesktopFocusMode}
+            >
+              {desktopFocusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              <span>{t(desktopFocusMode ? "editor.exitFocusMode" : "editor.focusMode")}</span>
+            </Button>
           </div>
         </div>
         {noteSearchOpen ? (

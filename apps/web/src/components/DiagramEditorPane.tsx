@@ -2077,8 +2077,9 @@ export const DiagramEditorPane = ({
             <div className="hidden items-center gap-1 lg:flex">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button size="icon" variant={desktopFocusMode ? "soft" : "ghost"} aria-label={t(desktopFocusMode ? "editor.exitFocusMode" : "editor.enterFocusMode")} aria-pressed={desktopFocusMode} onClick={onToggleDesktopFocusMode}>
+                  <Button size="sm" variant={desktopFocusMode ? "soft" : "ghost"} aria-label={t(desktopFocusMode ? "editor.exitFocusMode" : "editor.enterFocusMode")} aria-pressed={desktopFocusMode} onClick={onToggleDesktopFocusMode}>
                     {desktopFocusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                    <span>{t(desktopFocusMode ? "editor.exitFocusMode" : "editor.focusMode")}</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{t(desktopFocusMode ? "editor.exitFocusMode" : "editor.focusMode")}</TooltipContent>
