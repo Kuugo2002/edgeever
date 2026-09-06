@@ -358,5 +358,19 @@ jobs:
           test -n "$APP_STORE_CONNECT_API_ISSUER_ID"
           test -n "$APP_STORE_CONNECT_API_KEY_ID"
           test -n "$APP_STORE_CONNECT_API_KEY_P8_BASE64"
-          bundle exec fastlane ios submit_review
+          log_file="$RUNNER_TEMP/edgeever-app-store-review.log"
+          for attempt in {1..20}; do
+            set +e
+            bundle exec fastlane ios submit_review 2>&1 | tee "$log_file"
+            status="${PIPESTATUS[0]}"
+            set -e
+            if [[ "$status" -eq 0 ]]; then
+              exit 0
+            fi
+            if ! grep -Fq "Build number: ${APP_STORE_BUILD_NUMBER} does not exist" "$log_file" || [[ "$attempt" -eq 20 ]]; then
+              exit "$status"
+            fi
+            echo "App Store Connect has not exposed build ${APP_STORE_BUILD_NUMBER} yet; retrying in 60 seconds (${attempt}/20)."
+            sleep 60
+          done
         working-directory: apps/mobile

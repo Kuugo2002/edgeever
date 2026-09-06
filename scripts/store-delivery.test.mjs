@@ -84,6 +84,11 @@ describe("store delivery command", () => {
     expect(workflow).toContain(
       'PRECHECK_INCLUDE_IN_APP_PURCHASES: "false"',
     );
+    expect(workflow).toContain("for attempt in {1..20}");
+    expect(workflow).toContain(
+      'Build number: ${APP_STORE_BUILD_NUMBER} does not exist',
+    );
+    expect(workflow).toContain("retrying in 60 seconds (${attempt}/20)");
     const fastfile = readFileSync(
       new URL("../apps/mobile/fastlane/Fastfile", import.meta.url),
       "utf8",
