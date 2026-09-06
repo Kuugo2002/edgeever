@@ -98,7 +98,7 @@ describe("diagram editor canvas surface", () => {
 
   test("provides architecture components, boundaries, semantic edges, and editable labels", () => {
     expect(source).toContain('document.kind === "architecture"');
-    expect(source).toContain('addNode("service")');
+    expect(source).not.toContain('onClick={() => addNode("service")}');
     expect(source).toContain('{ shape: "database", icon: Database');
     expect(source).toContain('{ shape: "boundary", icon: Box');
     expect(source).toContain('t("diagram.architectureConnectHint")');
@@ -128,6 +128,8 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain("<Collapsible key={category.id} defaultOpen>");
     expect(source).toContain("category.items.filter");
     expect(source).toContain('className="grid grid-cols-7 gap-1 px-1 pb-2"');
+    expect(source).toContain('text-xs font-semibold');
+    expect(source).not.toContain('{category.items.length}</span>');
     expect(source).toContain('<TooltipContent side="top">');
     expect(source).toContain('aria-label={label}');
     expect(source).toContain('options.label ??');

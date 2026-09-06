@@ -343,10 +343,9 @@ const ArchitectureComponentLibrary = ({
           {categories.length > 0 ? categories.map((category) => (
             <Collapsible key={category.id} defaultOpen>
               <DropdownMenuItem asChild onSelect={(event) => event.preventDefault()}>
-                <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-green)]">
+                <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-green)]">
                   <ChevronDown className="h-4 w-4 text-slate-400 transition-transform group-data-[state=closed]:-rotate-90" />
                   {t(category.labelKey)}
-                  <span className="ml-auto text-xs font-normal text-slate-400">{category.items.length}</span>
                 </CollapsibleTrigger>
               </DropdownMenuItem>
               <CollapsibleContent>
@@ -2083,12 +2082,6 @@ export const DiagramEditorPane = ({
               </Tooltip>
             ) : document.kind === "architecture" ? (
               <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button size="sm" variant="soft" onClick={() => addNode("service")}><Server className="h-4 w-4" />{t("diagram.addService")}</Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("diagram.architectureShortcuts")}</TooltipContent>
-                </Tooltip>
                 <ArchitectureComponentLibrary
                   onAdd={(item) => addNode(item.shape, {
                     label: t(item.labelKey),
