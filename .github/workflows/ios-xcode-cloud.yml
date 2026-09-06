@@ -131,6 +131,23 @@ jobs:
                               f"completion={action_attributes.get('completionStatus')} "
                               f"issues={action_attributes.get('issueCounts')}"
                           )
+                          issues = api(
+                              "GET",
+                              f"/v1/ciBuildActions/{action['id']}/issues?limit=200&"
+                              "fields%5BciIssues%5D=issueType,message,fileSource,category",
+                          )
+                          for issue in issues.get("data", []):
+                              issue_attributes = issue.get("attributes") or {}
+                              source = issue_attributes.get("fileSource") or {}
+                              location = source.get("path") or ""
+                              if source.get("lineNumber"):
+                                  location += f":{source['lineNumber']}"
+                              print(
+                                  f"  - issue={issue_attributes.get('issueType')} "
+                                  f"category={issue_attributes.get('category')} "
+                                  f"location={location} "
+                                  f"message={issue_attributes.get('message')}"
+                              )
                       builds = api(
                           "GET",
                           f"/v1/ciBuildRuns/{build_run_id}/builds?limit=50&"
