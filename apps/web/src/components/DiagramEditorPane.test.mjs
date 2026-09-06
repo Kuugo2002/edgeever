@@ -90,6 +90,7 @@ describe("diagram editor canvas surface", () => {
   test("labels auto layout directly instead of relying on an ambiguous icon", () => {
     expect(toolbarSource).toContain('<WandSparkles className="h-4 w-4" />');
     expect(toolbarSource).toContain('<span>{t("diagram.autoLayout")}</span>');
+    expect(toolbarSource).toContain('<TooltipContent>{t("diagram.autoLayoutTooltip")}</TooltipContent>');
     expect(toolbarSource).not.toContain('<Button size="icon" variant="ghost" aria-label={t("diagram.autoLayout")}');
   });
 

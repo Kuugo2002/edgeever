@@ -96,7 +96,7 @@ export const DiagramToolbar = ({
               <span>{t("diagram.autoLayout")}</span>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{t("diagram.autoLayout")}</TooltipContent>
+          <TooltipContent>{t("diagram.autoLayoutTooltip")}</TooltipContent>
         </Tooltip>
       )}
       <ToolbarDivider />
