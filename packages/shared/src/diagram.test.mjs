@@ -82,6 +82,7 @@ describe("diagram document", () => {
 
   test("round-trips architecture components, boundaries, and semantic connections", () => {
     const document = createDefaultDiagramDocument("architecture");
+    document.nodes.find((node) => node.id === "api").resourceIcon = "container";
     const parsed = parseDiagramDocument(serializeDiagramDocument(document));
     expect(parsed).toEqual(document);
     expect(parsed.schemaVersion).toBe(2);
@@ -95,6 +96,23 @@ describe("diagram document", () => {
     expect(fallback).toContain('shape: cyl, label: "数据库"');
     expect(fallback).toContain('shape: disk, label: "对象存储"');
     expect(fallback).toContain("classDef archDatabase");
+  });
+
+  test("keeps legacy architecture nodes valid and projects resource-specific icons", () => {
+    const legacy = createDefaultDiagramDocument("architecture");
+    expect(legacy.nodes.every((node) => node.resourceIcon === undefined)).toBe(true);
+    expect(parseDiagramDocument(serializeDiagramDocument(legacy))).toEqual(legacy);
+
+    const container = legacy.nodes.find((node) => node.id === "api");
+    const database = legacy.nodes.find((node) => node.id === "database");
+    container.resourceIcon = "container";
+    database.resourceIcon = "noSqlDatabase";
+    const projected = diagramDocumentToX6Cells(legacy, "light");
+    const containerCell = projected.nodes.find((node) => node.id === "api");
+    const databaseCell = projected.nodes.find((node) => node.id === "database");
+    expect(containerCell.attrs.resourceIcon.text).toBe("⬡");
+    expect(databaseCell.attrs.resourceIcon.text).toBe("ϟ");
+    expect(containerCell.attrs.resourceIcon.text).not.toBe(databaseCell.attrs.resourceIcon.text);
   });
 
   test("rejects malformed and dangling graph data", () => {

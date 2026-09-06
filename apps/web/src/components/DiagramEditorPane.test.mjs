@@ -99,8 +99,8 @@ describe("diagram editor canvas surface", () => {
   test("provides architecture components, boundaries, semantic edges, and editable labels", () => {
     expect(source).toContain('document.kind === "architecture"');
     expect(source).toContain('addNode("service")');
-    expect(source).toContain('addNode("database")');
-    expect(source).toContain('addNode("boundary")');
+    expect(source).toContain('{ shape: "database", icon: Database');
+    expect(source).toContain('{ shape: "boundary", icon: Box');
     expect(source).toContain('t("diagram.architectureConnectHint")');
     expect(source).toContain("fitArchitectureBoundaries(graph)");
     expect(source).toContain("parent.addChild(node)");
@@ -110,6 +110,33 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain('{ tagName: "path", selector: "architectureIcon" }');
     expect(source).toContain('shape === "external" ? "7 5"');
     expect(globalStyles).toContain('[data-diagram-kind="architecture"] .x6-port-body');
+  });
+
+  test("organizes architecture resources in a searchable category library", () => {
+    expect(source).toContain("ARCHITECTURE_LIBRARY_CATEGORIES");
+    expect(source).toContain('t("diagram.componentLibrary")');
+    expect(source).toContain('t("diagram.componentSearch")');
+    expect(source).toContain('labelKey: "diagram.componentCategoryExperience"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryServices"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryDatabases"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryStorage"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryMiddleware"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryNetwork"');
+    expect(source).toContain('labelKey: "diagram.componentCategorySecurity"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryObservability"');
+    expect(source).toContain('labelKey: "diagram.componentCategoryExternal"');
+    expect(source).toContain("<Collapsible key={category.id} defaultOpen>");
+    expect(source).toContain("category.items.filter");
+    expect(source).toContain('className="grid grid-cols-7 gap-1 px-1 pb-2"');
+    expect(source).toContain('<TooltipContent side="top">');
+    expect(source).toContain('aria-label={label}');
+    expect(source).toContain('options.label ??');
+    expect(source).toContain('resourceIcon: architectureResourceIcon(item)');
+    expect(source).toContain('...(data?.resourceIcon ? { resourceIcon: data.resourceIcon } : {})');
+    expect(source).toContain('architectureNodeVisuals(node.shape, size, appearance, node.resourceIcon)');
+    expect(source).toContain('inferArchitectureResourceIcon(node.label, t)');
+    expect(source).toContain('.render({}, null).props.iconNode');
+    expect(source).not.toContain('className="line-clamp-2"');
   });
 
   test("shows connection handles only on selected flowchart nodes", () => {

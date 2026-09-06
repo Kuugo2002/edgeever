@@ -21,6 +21,20 @@ export type DiagramNodeShape =
 export type DiagramEdgeKind = "dependency" | "request" | "async" | "data";
 export type DiagramTheme = "brand" | "ocean" | "ink";
 
+export const ARCHITECTURE_RESOURCE_ICONS = [
+  "client", "webApp", "mobileApp", "website", "apiClient",
+  "service", "virtualMachine", "container", "kubernetes", "serverless",
+  "relationalDatabase", "noSqlDatabase", "cache", "dataWarehouse", "searchEngine",
+  "objectStorage", "fileStorage", "blockStorage", "backup", "cdn",
+  "messageQueue", "eventBus", "streamProcessing", "webhook", "serviceMesh",
+  "apiGateway", "loadBalancer", "dns", "vpc", "subnet", "vpn",
+  "identity", "firewall", "waf", "secretManager", "certificate", "systemBoundary",
+  "monitoring", "logging", "metrics", "tracing", "alerting",
+  "saas", "externalApi", "thirdPartyService",
+] as const;
+
+export type ArchitectureResourceIcon = typeof ARCHITECTURE_RESOURCE_ICONS[number];
+
 export type DiagramNode = {
   id: string;
   label: string;
@@ -30,6 +44,7 @@ export type DiagramNode = {
   height: number;
   shape: DiagramNodeShape;
   parentId?: string;
+  resourceIcon?: ArchitectureResourceIcon;
 };
 
 export type DiagramEdge = {
@@ -80,6 +95,9 @@ const DIAGRAM_NODE_SHAPES: DiagramNodeShape[] = [
 ];
 const DIAGRAM_EDGE_KINDS: DiagramEdgeKind[] = ["dependency", "request", "async", "data"];
 
+const isArchitectureResourceIcon = (value: unknown): value is ArchitectureResourceIcon =>
+  typeof value === "string" && ARCHITECTURE_RESOURCE_ICONS.includes(value as ArchitectureResourceIcon);
+
 const parseNode = (value: unknown): DiagramNode | null => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const node = value as Record<string, unknown>;
@@ -98,6 +116,7 @@ const parseNode = (value: unknown): DiagramNode | null => {
     height: node.height,
     shape: node.shape as DiagramNodeShape,
     ...(typeof node.parentId === "string" && node.parentId ? { parentId: node.parentId } : {}),
+    ...(isArchitectureResourceIcon(node.resourceIcon) ? { resourceIcon: node.resourceIcon } : {}),
   };
 };
 
