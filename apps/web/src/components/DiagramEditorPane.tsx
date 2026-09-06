@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type DragEvent as ReactDragEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Export, Graph, History, Keyboard, Selection, type Edge, type Node } from "@antv/x6";
 import * as m from "motion/react-m";
 import {
@@ -170,6 +170,8 @@ type ArchitectureLibraryItem = {
   shape: DiagramNodeShape;
 };
 
+const ARCHITECTURE_LIBRARY_DRAG_TYPE = "application/x-edgeever-architecture-resource";
+
 const ARCHITECTURE_LIBRARY_CATEGORIES: Array<{
   id: string;
   labelKey: string;
@@ -305,10 +307,10 @@ const inferArchitectureResourceIcon = (
 };
 
 const ArchitectureComponentLibrary = ({
-  onAdd,
+  onPick,
   t,
 }: {
-  onAdd: (item: ArchitectureLibraryItem) => void;
+  onPick: (item: ArchitectureLibraryItem) => void;
   t: (key: string) => string;
 }) => {
   const [open, setOpen] = useState(false);
@@ -320,7 +322,7 @@ const ArchitectureComponentLibrary = ({
   })).filter((category) => category.items.length > 0);
 
   return (
-    <DropdownMenu open={open} onOpenChange={(nextOpen) => {
+    <DropdownMenu modal={false} open={open} onOpenChange={(nextOpen) => {
       setOpen(nextOpen);
       if (!nextOpen) setQuery("");
     }}>
@@ -359,17 +361,24 @@ const ArchitectureComponentLibrary = ({
                         <TooltipTrigger asChild>
                           <DropdownMenuItem
                             aria-label={label}
-                            className={cn("flex h-10 w-10 cursor-pointer justify-center rounded-lg p-0 hover:bg-current/10 focus:bg-current/10", category.tone)}
+                            className={cn("flex h-10 w-10 cursor-grab justify-center rounded-lg p-0 hover:bg-current/10 focus:bg-current/10 active:cursor-grabbing", category.tone)}
+                            draggable
+                            onDragStart={(event) => {
+                              event.dataTransfer.effectAllowed = "copy";
+                              event.dataTransfer.setData(ARCHITECTURE_LIBRARY_DRAG_TYPE, architectureResourceIcon(item));
+                            }}
+                            onDragEnd={() => setOpen(false)}
                             onSelect={() => {
-                              onAdd(item);
+                              onPick(item);
                               setOpen(false);
                             }}
                           >
                             <Icon className="h-5 w-5" />
                           </DropdownMenuItem>
                         </TooltipTrigger>
-                        <TooltipContent side="top">
-                          {label}
+                        <TooltipContent side="top" className="max-w-48">
+                          <div>{label}</div>
+                          <div className="text-[11px] text-slate-300">{t("diagram.placeShapeHelp")}</div>
                         </TooltipContent>
                       </Tooltip>
                     );
@@ -987,9 +996,25 @@ export const DiagramEditorPane = ({
   const [historyState, setHistoryState] = useState({ undo: false, redo: false });
   const [nodeEditor, setNodeEditor] = useState<NodeEditorState | null>(null);
   const [flowQuickCreate, setFlowQuickCreate] = useState<FlowQuickCreateState | null>(null);
+  const [pendingArchitectureItem, setPendingArchitectureItem] = useState<ArchitectureLibraryItem | null>(null);
   const flowQuickCreateRef = useRef<FlowQuickCreateState | null>(null);
   const flowPointerDragRef = useRef<FlowPointerDragState | null>(null);
   const nodeEditorRef = useRef<NodeEditorState | null>(null);
+
+  useEffect(() => {
+    setPendingArchitectureItem(null);
+  }, [memo.id]);
+
+  useEffect(() => {
+    if (!pendingArchitectureItem) return;
+    const cancelPlacement = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setPendingArchitectureItem(null);
+    };
+    window.addEventListener("keydown", cancelPlacement);
+    return () => window.removeEventListener("keydown", cancelPlacement);
+  }, [pendingArchitectureItem]);
 
   const beginNodeEdit = useCallback((node: Node) => {
     const graph = graphRef.current;
@@ -1554,6 +1579,7 @@ export const DiagramEditorPane = ({
       baseNodeId?: string;
       beginEditing?: boolean;
       label?: string;
+      position?: { x: number; y: number };
       resourceIcon?: ArchitectureResourceIcon;
     } = {},
   ) => {
@@ -1580,7 +1606,46 @@ export const DiagramEditorPane = ({
     const childNodes = isMindMap && selected?.isNode()
       ? graph.getNodes().filter((node) => node.getData<NodeData>()?.parentId === selected.id)
       : [];
-    const nextPosition = requestedSibling
+    const authoredSize = isArchitecture
+      ? compactArchitectureNodeSize(shape)
+      : { width: shape === "decision" ? 132 : 140, height: shape === "decision" ? 84 : 52 };
+    const dropBoundary = isArchitecture && shape !== "boundary" && options.position
+      ? graph.getNodes()
+        .filter((node) => node.getData<NodeData>()?.shape === "boundary")
+        .filter((node) => {
+          const bounds = node.getBBox();
+          return options.position!.x >= bounds.x
+            && options.position!.x <= bounds.x + bounds.width
+            && options.position!.y >= bounds.y
+            && options.position!.y <= bounds.y + bounds.height;
+        })
+        .sort((left, right) => {
+          const leftBounds = left.getBBox();
+          const rightBounds = right.getBBox();
+          return leftBounds.width * leftBounds.height - rightBounds.width * rightBounds.height;
+        })[0]
+      : undefined;
+    const requestedPosition = options.position
+      ? {
+          x: options.position.x - authoredSize.width / 2,
+          y: options.position.y - authoredSize.height / 2,
+        }
+      : undefined;
+    if (requestedPosition && dropBoundary) {
+      const bounds = dropBoundary.getBBox();
+      const horizontalPadding = 18;
+      const topPadding = 40;
+      const bottomPadding = 18;
+      requestedPosition.x = Math.min(
+        Math.max(requestedPosition.x, bounds.x + horizontalPadding),
+        Math.max(bounds.x + horizontalPadding, bounds.x + bounds.width - authoredSize.width - horizontalPadding),
+      );
+      requestedPosition.y = Math.min(
+        Math.max(requestedPosition.y, bounds.y + topPadding),
+        Math.max(bounds.y + topPadding, bounds.y + bounds.height - authoredSize.height - bottomPadding),
+      );
+    }
+    const nextPosition = requestedPosition ?? (requestedSibling
       ? {
           x: selectedPosition.x,
           y: Math.max(selectedPosition.y, ...siblings.map((node) => node.getPosition().y)) + 52,
@@ -1590,14 +1655,11 @@ export const DiagramEditorPane = ({
           y: childNodes.length > 0
             ? Math.max(...childNodes.map((node) => node.getPosition().y)) + 52
             : selectedPosition.y,
-        };
+        });
     const id = createId(isMindMap ? "topic" : "node");
     const architectureParentId = isArchitecture && shape !== "boundary"
-      ? selectedData?.shape === "boundary" ? selected?.id : selectedData?.parentId
+      ? dropBoundary?.id ?? (options.position ? undefined : selectedData?.shape === "boundary" ? selected?.id : selectedData?.parentId)
       : undefined;
-    const authoredSize = isArchitecture
-      ? compactArchitectureNodeSize(shape)
-      : { width: shape === "decision" ? 132 : 140, height: shape === "decision" ? 84 : 52 };
     graph.startBatch("add");
     const node = graph.addNode(nodeMetadata({
       id,
@@ -1649,6 +1711,47 @@ export const DiagramEditorPane = ({
       requestAnimationFrame(() => beginNodeEdit(node));
     }
   }, [beginNodeEdit, document, readOnly, selectedNodeId, t]);
+
+  const placeArchitectureItem = useCallback((
+    item: ArchitectureLibraryItem,
+    position: { x: number; y: number },
+  ) => {
+    addNode(item.shape, {
+      label: t(item.labelKey),
+      position,
+      resourceIcon: architectureResourceIcon(item),
+    });
+    setPendingArchitectureItem(null);
+    requestAnimationFrame(() => containerRef.current?.focus({ preventScroll: true }));
+  }, [addNode, t]);
+
+  const handleArchitectureDragOver = (event: ReactDragEvent<HTMLDivElement>) => {
+    if (document?.kind !== "architecture" || readOnly || !Array.from(event.dataTransfer.types).includes(ARCHITECTURE_LIBRARY_DRAG_TYPE)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleArchitectureDrop = (event: ReactDragEvent<HTMLDivElement>) => {
+    if (document?.kind !== "architecture" || readOnly) return;
+    const resourceIcon = event.dataTransfer.getData(ARCHITECTURE_LIBRARY_DRAG_TYPE) as ArchitectureResourceIcon;
+    const item = ARCHITECTURE_LIBRARY_ITEMS.find((candidate) => architectureResourceIcon(candidate) === resourceIcon);
+    const graph = graphRef.current;
+    if (!item || !graph) return;
+    event.preventDefault();
+    event.stopPropagation();
+    placeArchitectureItem(item, graph.clientToLocal({ x: event.clientX, y: event.clientY }));
+  };
+
+  const handlePendingArchitecturePlacement = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!pendingArchitectureItem || document?.kind !== "architecture" || readOnly || event.button !== 0) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest(".x6-node, .x6-edge")) return;
+    const graph = graphRef.current;
+    if (!graph) return;
+    event.preventDefault();
+    event.stopPropagation();
+    placeArchitectureItem(pendingArchitectureItem, graph.clientToLocal({ x: event.clientX, y: event.clientY }));
+  };
 
   insertNodeRef.current = (relation, baseNodeId) => {
     addNode("topic", { relation, baseNodeId, beginEditing: true });
@@ -2144,10 +2247,7 @@ export const DiagramEditorPane = ({
               />
             ) : document.kind === "architecture" ? (
               <ArchitectureComponentLibrary
-                onAdd={(item) => addNode(item.shape, {
-                  label: t(item.labelKey),
-                  resourceIcon: architectureResourceIcon(item),
-                })}
+                onPick={setPendingArchitectureItem}
                 t={t}
               />
             ) : (
@@ -2192,7 +2292,24 @@ export const DiagramEditorPane = ({
           theme={theme}
         />
         <div className="relative min-h-0 flex-1">
-          <div ref={containerRef} className="edgeever-diagram-canvas absolute inset-0 touch-none outline-none" data-diagram-appearance={resolvedTheme} data-diagram-kind={document.kind} data-diagram-theme={theme} tabIndex={0} aria-label={t("diagram.canvas", { type: kindLabel })} />
+          <div
+            ref={containerRef}
+            className={cn("edgeever-diagram-canvas absolute inset-0 touch-none outline-none", pendingArchitectureItem && "cursor-crosshair")}
+            data-architecture-placement={pendingArchitectureItem ? "active" : undefined}
+            data-diagram-appearance={resolvedTheme}
+            data-diagram-kind={document.kind}
+            data-diagram-theme={theme}
+            tabIndex={0}
+            aria-label={t("diagram.canvas", { type: kindLabel })}
+            onDragOver={handleArchitectureDragOver}
+            onDrop={handleArchitectureDrop}
+            onPointerDownCapture={handlePendingArchitecturePlacement}
+          />
+          {pendingArchitectureItem ? (
+            <div className="pointer-events-none absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-md border border-slate-200 bg-white/95 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm" role="status">
+              {t("diagram.placeShapeHint", { shape: t(pendingArchitectureItem.labelKey) })}
+            </div>
+          ) : null}
           {flowQuickCreate ? (
             <div
               className="absolute z-30 w-[330px] max-w-[calc(100%-24px)] rounded-xl border border-slate-200 bg-white p-2 shadow-xl"

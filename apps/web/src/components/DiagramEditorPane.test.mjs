@@ -163,7 +163,7 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain('className="grid grid-cols-7 gap-1 px-1 pb-2"');
     expect(source).toContain('text-xs font-semibold');
     expect(source).not.toContain('{category.items.length}</span>');
-    expect(source).toContain('<TooltipContent side="top">');
+    expect(source).toContain('<TooltipContent side="top"');
     expect(source).toContain('aria-label={label}');
     expect(source).toContain('options.label ??');
     expect(source).toContain('resourceIcon: architectureResourceIcon(item)');
@@ -172,6 +172,21 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain('inferArchitectureResourceIcon(node.label, t)');
     expect(source).toContain('.render({}, null).props.iconNode');
     expect(source).not.toContain('className="line-clamp-2"');
+  });
+
+  test("places architecture resources at an explicit canvas position", () => {
+    expect(source).toContain('const ARCHITECTURE_LIBRARY_DRAG_TYPE = "application/x-edgeever-architecture-resource"');
+    expect(source).toContain('<DropdownMenu modal={false}');
+    expect(source).toContain("draggable");
+    expect(source).toContain("event.dataTransfer.setData(ARCHITECTURE_LIBRARY_DRAG_TYPE");
+    expect(source).toContain("onDragOver={handleArchitectureDragOver}");
+    expect(source).toContain("onDrop={handleArchitectureDrop}");
+    expect(source).toContain("graph.clientToLocal({ x: event.clientX, y: event.clientY })");
+    expect(source).toContain("position: { x: number; y: number }");
+    expect(source).toContain("x: options.position.x - authoredSize.width / 2");
+    expect(source).toContain("onPick={setPendingArchitectureItem}");
+    expect(source).toContain("onPointerDownCapture={handlePendingArchitecturePlacement}");
+    expect(source).toContain('t("diagram.placeShapeHint"');
   });
 
   test("opens every diagram insertion library immediately on pointer hover", () => {

@@ -268,6 +268,8 @@ export const zhCN = {
     addBoundary: "添加系统边界",
     components: "组件",
     componentLibrary: "图形库",
+    placeShapeHelp: "拖到画布，或选中后点击放置",
+    placeShapeHint: "点击画布放置“{{shape}}” · Esc 取消",
     componentSearch: "搜索架构组件",
     componentCategoryExperience: "应用与客户端",
     componentCategoryServices: "计算与服务",

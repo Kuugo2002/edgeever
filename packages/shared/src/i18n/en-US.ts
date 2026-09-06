@@ -268,6 +268,8 @@ export const enUS = {
     addBoundary: "Add system boundary",
     components: "Components",
     componentLibrary: "Shape library",
+    placeShapeHelp: "Drag to the canvas, or select then click to place",
+    placeShapeHint: "Click the canvas to place “{{shape}}” · Esc to cancel",
     componentSearch: "Search architecture components",
     componentCategoryExperience: "Apps & clients",
     componentCategoryServices: "Compute & services",
