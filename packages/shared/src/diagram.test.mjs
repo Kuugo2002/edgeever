@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createDefaultDiagramDocument, diagramDocumentToMermaid, diagramFallbackMarkdown, parseDiagramDocument, serializeDiagramDocument } from "./diagram.ts";
+import { createDefaultDiagramDocument, diagramDocumentToMermaid, diagramFallbackMarkdown, hasDiagramDocumentMarker, parseDiagramDocument, serializeDiagramDocument, stripDiagramDocumentMarker } from "./diagram.ts";
 import { markdownToDoc } from "./content.ts";
 
 describe("diagram document", () => {
@@ -8,6 +8,42 @@ describe("diagram document", () => {
     document.nodes[0].label = "产品路线图 🚀";
     document.theme = "ocean";
     expect(parseDiagramDocument(serializeDiagramDocument(document))).toEqual(document);
+  });
+
+  test("parses the envelope without browser base64 and text codec globals", () => {
+    const originalAtob = globalThis.atob;
+    const originalBtoa = globalThis.btoa;
+    const originalTextDecoder = globalThis.TextDecoder;
+    const originalTextEncoder = globalThis.TextEncoder;
+    try {
+      globalThis.atob = undefined;
+      globalThis.btoa = undefined;
+      globalThis.TextDecoder = undefined;
+      globalThis.TextEncoder = undefined;
+      const document = createDefaultDiagramDocument("mind-map");
+      document.nodes[0].label = "核心主题";
+      expect(parseDiagramDocument(serializeDiagramDocument(document))).toEqual(document);
+    } finally {
+      globalThis.atob = originalAtob;
+      globalThis.btoa = originalBtoa;
+      globalThis.TextDecoder = originalTextDecoder;
+      globalThis.TextEncoder = originalTextEncoder;
+    }
+  });
+
+  test("accepts wrapped metadata and strips invalid envelopes from visible content", () => {
+    const serialized = serializeDiagramDocument(createDefaultDiagramDocument("mind-map"));
+    const wrapped = serialized.replace(
+      /(edgeever-diagram-v1:)([A-Za-z0-9_-]+)/,
+      (_match, prefix, payload) => `${prefix}${payload.match(/.{1,48}/g).join("\n")}`,
+    );
+    expect(parseDiagramDocument(wrapped)?.kind).toBe("mind-map");
+
+    const invalid = `${diagramFallbackMarkdown(createDefaultDiagramDocument("flowchart"))}\n\n<!-- edgeever-diagram-v1:not-json -->`;
+    expect(hasDiagramDocumentMarker(invalid)).toBe(true);
+    expect(parseDiagramDocument(invalid)).toBeNull();
+    expect(stripDiagramDocumentMarker(invalid)).not.toContain("edgeever-diagram-v1");
+    expect(stripDiagramDocumentMarker(invalid)).toContain("```mermaid");
   });
 
   test("persists a Mermaid fallback that native app viewers can render", () => {

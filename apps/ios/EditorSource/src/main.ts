@@ -20,6 +20,7 @@ import {
   NativeAttachmentMetadata,
   prepareNativeEditorContent,
   parseDiagramDocument,
+  stripDiagramDocumentMarker,
   resolveAttachmentKind,
   resolveNativeAttachmentContent,
   restoreNativeEditorContent,
@@ -1368,7 +1369,9 @@ const api: EdgeEverEditorAPI = {
   setMarkdown(md) {
     suppressChange = true;
     const diagram = mode === "viewer" ? parseDiagramDocument(md) : null;
-    const displayMarkdown = diagram ? diagramFallbackMarkdown(diagram) : md;
+    const displayMarkdown = mode === "viewer"
+      ? (diagram ? diagramFallbackMarkdown(diagram) : stripDiagramDocumentMarker(md))
+      : md;
     try {
       editor.commands.setContent(displayMarkdown || "", { contentType: "markdown" } as never);
     } catch {

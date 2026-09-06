@@ -310,6 +310,43 @@ final class TipTapContentSourceTests: XCTestCase {
             let leakedLegacyFallback = try await evalBool(webView, "document.body.innerText.includes('node list only')")
             XCTAssertFalse(leakedLegacyFallback)
         }
+
+        // A malformed visual-note envelope must never leak its internal marker.
+        // Keep rendering the portable Mermaid fallback while treating the note as
+        // view-only, which is the same recovery path used by the mobile clients.
+        let malformedSample = """
+        # 思维导图
+
+        ```mermaid
+        flowchart LR
+          n0("核心主题") --> n1("分支主题")
+        ```
+
+        <!-- edgeever-diagram-v1:not-json -->
+        """
+        let malformedB64 = Data(malformedSample.utf8).base64EncodedString()
+        _ = try await eval(webView, """
+        (function(){
+          var bin = atob('\(malformedB64)');
+          var bytes = new Uint8Array(bin.length);
+          for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          window.EdgeEverEditor.setMarkdown(new TextDecoder('utf-8').decode(bytes));
+          return true;
+        })()
+        """)
+
+        var malformedSVGCount = 0
+        for _ in 0..<100 {
+            malformedSVGCount = try await evalInt(webView, "document.querySelectorAll('.edgeever-mermaid svg').length")
+            if malformedSVGCount == 1 { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertEqual(malformedSVGCount, 1, "malformed envelope must preserve the Mermaid fallback")
+        let leakedInternalMarker = try await evalBool(
+            webView,
+            "document.body.innerText.includes('edgeever-diagram-v1')"
+        )
+        XCTAssertFalse(leakedInternalMarker, "internal diagram metadata must never be visible")
     }
 
     // MARK: - JS helpers

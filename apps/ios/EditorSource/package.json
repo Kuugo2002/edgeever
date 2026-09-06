@@ -21,6 +21,7 @@
     "@tiptap/pm": "3.31.0",
     "@tiptap/starter-kit": "3.31.0",
     "html-to-image": "^1.11.13",
+    "js-base64": "3.9.3",
     "katex": "0.16.22",
     "mermaid": "11.16.1"
   },
