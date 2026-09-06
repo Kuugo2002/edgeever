@@ -59,6 +59,11 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain("!readOnly && saveFailed");
     expect(source).toContain('t("diagram.retrySave")');
     expect(source).not.toContain('<Save className="h-4 w-4" />');
+    expect(source).toContain('t("editor.saveState.unsaved")');
+    expect(source).toContain('"bg-slate-100 text-slate-500"');
+    expect(source).toContain("{...statusSettleMotion}");
+    expect(source).toContain('saveStatus === "unsaved" ? (');
+    expect(source).not.toContain('t("diagram.saved")');
   });
 
   test("uses a clean grid-free canvas for both diagram types", () => {

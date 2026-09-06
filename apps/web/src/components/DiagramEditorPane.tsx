@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Export, Graph, History, Keyboard, Selection, type Edge, type Node } from "@antv/x6";
+import * as m from "motion/react-m";
 import {
   Activity,
   AppWindow,
@@ -105,6 +106,7 @@ import { compactArchitectureNodeSize, compactFlowchartNodeSize, compactMindMapNo
 import { resolveDiagramPalette, type DiagramAppearance } from "@/lib/diagram-theme";
 import { isLocalMemoId } from "@/lib/local-mirror";
 import { isBrowserOffline } from "@/lib/network-status";
+import { statusSettleMotion } from "@/lib/motion";
 import type { EdgeEverRepository } from "@/lib/repository";
 import { cn, formatDateTime } from "@/lib/utils";
 
@@ -1938,6 +1940,19 @@ export const DiagramEditorPane = ({
   const currentMarkdown = historyOpen
     ? serializeDiagramDocument(graphRef.current ? graphToDocument(graphRef.current, document.kind, themeRef.current) : document)
     : memo.contentMarkdown;
+  const saveStatus = saveError ? "error" : saving ? "saving" : dirty ? "unsaved" : "saved";
+  const saveLabel = saveStatus === "error"
+    ? t("editor.saveState.error")
+    : saveStatus === "saving"
+      ? t("editor.saveState.saving")
+      : saveStatus === "unsaved"
+        ? t("editor.saveState.unsaved")
+        : t("editor.saveState.saved");
+  const saveStatusClassName = saveStatus === "error"
+    ? "bg-rose-50 text-rose-700"
+    : saveStatus === "saved"
+      ? "bg-slate-100 text-slate-500"
+      : "bg-emerald-50 text-emerald-700";
 
   return (
     <TooltipProvider>
@@ -2001,19 +2016,41 @@ export const DiagramEditorPane = ({
           </div>
 
           <div className="flex shrink-0 items-center gap-1">
-            <span className={cn(
+            <m.span
+              key={`mobile-${saveStatus}`}
+              className={cn(
               "inline-flex max-w-[5.5rem] truncate rounded-full px-2 py-1 text-[11px] font-medium sm:hidden",
-              saveError ? "bg-rose-50 text-rose-700" : dirty || saving ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700",
-            )} role="status" aria-live="polite">
-              {saveError ?? (dirty || saving ? t("diagram.saving") : t("diagram.saved"))}
-            </span>
-            <span className={cn(
+              saveStatusClassName,
+            )}
+              role="status"
+              aria-live="polite"
+              aria-label={saveError ? `${saveLabel}. ${saveError}` : undefined}
+              {...statusSettleMotion}
+            >
+              {saveLabel}
+            </m.span>
+            <m.span
+              key={saveStatus}
+              className={cn(
               "hidden items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium sm:inline-flex",
-              saveError ? "bg-rose-50 text-rose-700" : dirty || saving ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700",
-            )} role="status" aria-live="polite">
-              {saveError ? <CircleAlert className="h-3 w-3" /> : dirty || saving ? <LoaderCircle className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
-              {saveError ?? (dirty || saving ? t("diagram.saving") : t("diagram.saved"))}
-            </span>
+              saveStatusClassName,
+            )}
+              role="status"
+              aria-live="polite"
+              aria-label={saveError ? `${saveLabel}. ${saveError}` : undefined}
+              {...statusSettleMotion}
+            >
+              {saveStatus === "error" ? (
+                <CircleAlert className="h-3 w-3" aria-hidden="true" />
+              ) : saveStatus === "saving" ? (
+                <LoaderCircle className="h-3 w-3 animate-spin" aria-hidden="true" />
+              ) : saveStatus === "unsaved" ? (
+                <Pencil className="h-3 w-3" aria-hidden="true" />
+              ) : (
+                <Check className="h-3 w-3" aria-hidden="true" />
+              )}
+              {saveLabel}
+            </m.span>
             {!readOnly && saveFailed && (
               <Button variant="soft" size="sm" disabled={saving || !editSessionReady} onClick={() => void save()}>
                 <RefreshCw className="h-4 w-4" />
