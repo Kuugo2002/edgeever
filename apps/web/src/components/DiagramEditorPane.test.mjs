@@ -90,6 +90,13 @@ describe("diagram editor canvas surface", () => {
     expect(toolbarSource).not.toContain('<Button size="icon" variant="ghost" aria-label={t("diagram.autoLayout")}');
   });
 
+  test("keeps viewport fitting internal instead of exposing a redundant toolbar action", () => {
+    expect(toolbarSource).not.toContain("onFit");
+    expect(toolbarSource).not.toContain('t("diagram.fit")');
+    expect(source).not.toContain("onFit={() =>");
+    expect(source).toContain("fitDiagramContent(graph, document, containerRef.current, 40, layout.viewport);");
+  });
+
   test("delegates every diagram kind to one shared toolbar shell", () => {
     expect(source).toContain("<DiagramToolbar");
     expect(source).toContain("leading={!readOnly ? (");

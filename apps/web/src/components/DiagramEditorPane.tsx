@@ -2264,10 +2264,6 @@ export const DiagramEditorPane = ({
           onAutoLayout={applyAutoLayout}
           onDeleteSelection={removeSelected}
           onExport={exportDiagram}
-          onFit={() => {
-            const graph = graphRef.current;
-            if (graph) fitDiagramContent(graph, document, containerRef.current);
-          }}
           onRedo={() => runHistoryAction("redo")}
           onThemeChange={applyTheme}
           onUndo={() => runHistoryAction("undo")}

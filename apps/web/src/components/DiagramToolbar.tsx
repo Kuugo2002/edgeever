@@ -5,7 +5,6 @@ import {
   Download,
   FileCode2,
   FileImage,
-  Maximize2,
   Redo2,
   Trash2,
   Undo2,
@@ -35,7 +34,6 @@ type DiagramToolbarProps = {
   onAutoLayout: () => void;
   onDeleteSelection: () => void;
   onExport: (format: "png" | "svg") => void;
-  onFit: () => void;
   onRedo: () => void;
   onThemeChange: (theme: DiagramTheme) => void;
   onUndo: () => void;
@@ -74,7 +72,6 @@ export const DiagramToolbar = ({
   onAutoLayout,
   onDeleteSelection,
   onExport,
-  onFit,
   onRedo,
   onThemeChange,
   onUndo,
@@ -105,7 +102,6 @@ export const DiagramToolbar = ({
       <ToolbarDivider />
       <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.zoomOut")} onClick={onZoomOut}><ZoomOut className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.zoomOut")}</TooltipContent></Tooltip>
       <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.zoomIn")} onClick={onZoomIn}><ZoomIn className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.zoomIn")}</TooltipContent></Tooltip>
-      <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.fit")} onClick={onFit}><Maximize2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.fit")}</TooltipContent></Tooltip>
       <Select value={theme} disabled={readOnly} onValueChange={(value) => onThemeChange(value as DiagramTheme)}>
         <SelectTrigger className="h-8 w-[8.5rem] gap-2" aria-label={t("diagram.theme")}>
           <SelectValue />
