@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createDefaultDiagramDocument, diagramDocumentToMermaid, diagramFallbackMarkdown, hasDiagramDocumentMarker, parseDiagramDocument, serializeDiagramDocument, stripDiagramDocumentMarker } from "./diagram.ts";
+import { diagramDocumentToX6Cells } from "./diagram-view.ts";
 import { markdownToDoc } from "./content.ts";
 
 describe("diagram document", () => {
@@ -54,6 +55,20 @@ describe("diagram document", () => {
 
     const doc = markdownToDoc(markdown);
     expect(doc.content?.some((node) => node.type === "codeBlock" && node.attrs?.language === "mermaid")).toBe(true);
+  });
+
+  test("projects native viewers into the same branded X6 palette", () => {
+    const document = createDefaultDiagramDocument("mind-map");
+    const light = diagramDocumentToX6Cells(document, "light");
+    expect(light.canvas).toBe("#F8FAF9");
+    expect(light.nodes[0].attrs.body.fill).toBe("#16A06E");
+    expect(light.nodes[1].attrs.body.fill).toBe("#F0F8F4");
+    expect(light.edges[0].attrs.line.stroke).toBe("#55B891");
+    expect(light.edges[0].attrs.line.targetMarker).toBeNull();
+
+    const dark = diagramDocumentToX6Cells(document, "dark");
+    expect(dark.canvas).toBe("#101311");
+    expect(dark.nodes[1].attrs.body.fill).toBe("#18211D");
   });
 
   test("escapes labels and emits the mind-map hierarchy as a portable flowchart", () => {

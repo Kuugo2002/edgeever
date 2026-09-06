@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { DEFAULT_MEMO_TITLE, type MemoDetail, type TiptapDoc } from "@edgeever/shared";
+import { DEFAULT_MEMO_TITLE, parseDiagramDocument, type MemoDetail, type TiptapDoc } from "@edgeever/shared";
 import {
   type NoteImageTheme,
   type NoteImageFontStyle,
@@ -505,6 +505,10 @@ export const MemoDetailModal = ({
     () => (memo ? hasMobileVisualDiagram(memo.contentMarkdown) : false),
     [memo]
   );
+  const visualDiagramJson = useMemo(() => {
+    const diagram = memo ? parseDiagramDocument(memo.contentMarkdown) : null;
+    return diagram ? JSON.stringify(diagram) : undefined;
+  }, [memo]);
 
   const downloadResource = useCallback(async (target: MobileResourceTarget) => {
     if (!client) throw new Error(resolvedLocale === "en-US" ? "The resource client is unavailable." : "当前无法读取资源。");
@@ -1091,6 +1095,8 @@ export const MemoDetailModal = ({
                 }}
                 ref={viewerRef}
                 theme={resolvedTheme}
+                visualDiagramJson={visualDiagramJson}
+                visualDiagramNote={isVisualDiagram}
               />
             ) : (
               <View style={styles.centerState}>

@@ -265,6 +265,12 @@ final class TipTapContentSourceTests: XCTestCase {
         let config = WKWebViewConfiguration()
         config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 800), configuration: config)
+        let hostController = UIViewController()
+        let hostWindow = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        hostWindow.rootViewController = hostController
+        hostWindow.makeKeyAndVisible()
+        hostController.view.addSubview(webView)
+        defer { hostWindow.isHidden = true }
         webView.loadFileURL(htmlURL, allowingReadAccessTo: htmlURL.deletingLastPathComponent())
 
         for _ in 0..<100 {
@@ -301,14 +307,24 @@ final class TipTapContentSourceTests: XCTestCase {
             """)
 
             var svgCount = 0
+            var nodeCount = 0
             for _ in 0..<100 {
-                svgCount = try await evalInt(webView, "document.querySelectorAll('.edgeever-mermaid svg').length")
-                if svgCount == 1 { break }
+                svgCount = try await evalInt(webView, "document.querySelectorAll('.edgeever-x6-diagram .x6-graph-svg').length")
+                nodeCount = try await evalInt(webView, "document.querySelectorAll('.edgeever-x6-diagram .x6-node').length")
+                if svgCount == 1 && nodeCount > 0 { break }
                 try await Task.sleep(nanoseconds: 100_000_000)
             }
-            XCTAssertEqual(svgCount, 1, "each visual-note envelope must render as SVG in the iOS viewer")
+            XCTAssertEqual(svgCount, 1, "each visual-note envelope must render through X6 in the iOS viewer")
+            let graphWidth = try await evalInt(
+                webView,
+                "Math.round(document.querySelector('.edgeever-x6-diagram')?.getBoundingClientRect().width || 0)"
+            )
+            XCTAssertGreaterThan(graphWidth, 300, "X6 must occupy the viewer width instead of collapsing")
+            XCTAssertGreaterThan(nodeCount, 0, "X6 must materialize diagram nodes")
             let leakedLegacyFallback = try await evalBool(webView, "document.body.innerText.includes('node list only')")
             XCTAssertFalse(leakedLegacyFallback)
+            let leakedCodeAffordance = try await evalBool(webView, "document.body.innerText.includes('Copy code')")
+            XCTAssertFalse(leakedCodeAffordance)
         }
 
         // A malformed visual-note envelope must never leak its internal marker.

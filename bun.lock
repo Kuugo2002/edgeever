@@ -121,6 +121,7 @@
       "name": "@edgeever/mobile",
       "version": "1.0.0",
       "dependencies": {
+        "@antv/x6": "3.1.8",
         "@edgeever/client": "workspace:*",
         "@edgeever/shared": "workspace:*",
         "@expo/vector-icons": "^15.1.1",
