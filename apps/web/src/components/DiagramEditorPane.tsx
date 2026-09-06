@@ -6,7 +6,6 @@ import {
   AppWindow,
   Blocks,
   Box,
-  Boxes,
   BrickWall,
   Cable,
   Check,
@@ -26,7 +25,6 @@ import {
   Diamond,
   Database,
   DatabaseZap,
-  Download,
   EthernetPort,
   FileCode2,
   FileClock,
@@ -51,7 +49,6 @@ import {
   Network,
   Pencil,
   RadioTower,
-  Redo2,
   RefreshCw,
   RotateCcw,
   Router,
@@ -62,13 +59,9 @@ import {
   Smartphone,
   SquareFunction,
   Trash2,
-  Undo2,
-  WandSparkles,
   Webhook,
   Workflow,
   Zap,
-  ZoomIn,
-  ZoomOut,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -93,9 +86,9 @@ import { AppConfirmDialog } from "@/components/dialogs/ConfirmDialogs";
 import { RevisionHistoryDialog } from "@/components/dialogs/RevisionHistoryDialog";
 import { ShareMemoDialog } from "@/components/dialogs/ShareMemoDialog";
 import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
+import { DiagramToolbar, DiagramToolbarAddTrigger } from "@/components/DiagramToolbar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAppearanceTheme } from "@/components/ThemeProvider";
@@ -331,11 +324,7 @@ const ArchitectureComponentLibrary = ({
       setOpen(nextOpen);
       if (!nextOpen) setQuery("");
     }}>
-      <DropdownMenuTrigger asChild>
-        <Button size="sm" variant="outline" onPointerEnter={() => setOpen(true)}>
-          <Boxes className="h-4 w-4" />{t("diagram.componentLibrary")}
-        </Button>
-      </DropdownMenuTrigger>
+      <DiagramToolbarAddTrigger onPointerEnter={() => setOpen(true)} />
       <DropdownMenuContent align="start" className="max-h-[min(36rem,calc(100vh-8rem))] w-[min(30rem,calc(100vw-2rem))] overflow-y-auto p-0">
         <div className="sticky top-0 z-10 border-b border-slate-200 bg-white p-2.5">
           <div className="relative">
@@ -398,24 +387,14 @@ const ArchitectureComponentLibrary = ({
 };
 
 const DiagramInsertMenu = ({
-  icon: TriggerIcon,
   items,
-  label,
 }: {
-  icon: LucideIcon;
   items: Array<{ icon: LucideIcon; label: string; onSelect: () => void }>;
-  label: string;
 }) => {
   const [open, setOpen] = useState(false);
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button size="sm" variant="soft" onPointerEnter={() => setOpen(true)}>
-          <TriggerIcon className="h-4 w-4" />
-          {label}
-          <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-        </Button>
-      </DropdownMenuTrigger>
+      <DiagramToolbarAddTrigger onPointerEnter={() => setOpen(true)} />
       <DropdownMenuContent align="start">
         {items.map((item) => {
           const Icon = item.icon;
@@ -2150,12 +2129,14 @@ export const DiagramEditorPane = ({
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-slate-200 bg-white px-3 py-2">
-          {!readOnly && (
+        <DiagramToolbar
+          appearance={resolvedTheme}
+          canRedo={historyState.redo}
+          canUndo={historyState.undo}
+          hasSelection={hasSelection}
+          leading={!readOnly ? (
             document.kind === "mind-map" ? (
               <DiagramInsertMenu
-                icon={GitBranch}
-                label={t("diagram.addTopic")}
                 items={[
                   { icon: GitBranch, label: t("diagram.addTopic"), onSelect: () => addNode("topic", { relation: "child" }) },
                   { icon: ListTree, label: t("diagram.addSiblingTopic"), onSelect: () => addNode("topic", { relation: "sibling" }) },
@@ -2171,8 +2152,6 @@ export const DiagramEditorPane = ({
               />
             ) : (
               <DiagramInsertMenu
-                icon={Box}
-                label={t("diagram.addStep")}
                 items={[
                   { icon: Box, label: t("diagram.addStep"), onSelect: () => addNode("process") },
                   { icon: Diamond, label: t("diagram.addDecision"), onSelect: () => addNode("decision") },
@@ -2180,58 +2159,38 @@ export const DiagramEditorPane = ({
                 ]}
               />
             )
+          ) : undefined}
+          onAutoLayout={applyAutoLayout}
+          onDeleteSelection={removeSelected}
+          onExport={exportDiagram}
+          onFit={() => {
+            const graph = graphRef.current;
+            if (graph) fitDiagramContent(graph, document, containerRef.current);
+          }}
+          onRedo={() => runHistoryAction("redo")}
+          onThemeChange={applyTheme}
+          onUndo={() => runHistoryAction("undo")}
+          onZoomIn={() => graphRef.current?.zoom(0.1)}
+          onZoomOut={() => graphRef.current?.zoom(-0.1)}
+          readOnly={readOnly}
+          selectionEditor={(
+            <>
+              {selectedNodeId && !readOnly && (
+                <div className="ml-auto flex min-w-[220px] flex-1 items-center gap-2 sm:max-w-sm">
+                  <span className="shrink-0 text-xs font-medium text-slate-500">{t("diagram.nodeText")}</span>
+                  <Input value={selectedNodeLabel} maxLength={120} onChange={(event) => updateSelectedLabel(event.target.value)} />
+                </div>
+              )}
+              {selectedEdgeId && !readOnly && (
+                <div className="ml-auto flex min-w-[220px] flex-1 items-center gap-2 sm:max-w-sm">
+                  <span className="shrink-0 text-xs font-medium text-slate-500">{t("diagram.edgeText")}</span>
+                  <Input value={selectedEdgeLabel} maxLength={80} onChange={(event) => updateSelectedEdgeLabel(event.target.value)} />
+                </div>
+              )}
+            </>
           )}
-          <span className="mx-1 h-5 w-px bg-slate-200" />
-          <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.undo")} disabled={!historyState.undo || readOnly} onClick={() => runHistoryAction("undo")}><Undo2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.undo")}</TooltipContent></Tooltip>
-          <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.redo")} disabled={!historyState.redo || readOnly} onClick={() => runHistoryAction("redo")}><Redo2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.redo")}</TooltipContent></Tooltip>
-          {!readOnly && <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.deleteSelection")} disabled={!hasSelection} onClick={removeSelected}><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.deleteSelection")}</TooltipContent></Tooltip>}
-          {!readOnly && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="sm" variant="ghost" className="gap-1.5 px-2.5" aria-label={t("diagram.autoLayout")} onClick={applyAutoLayout}>
-                  <WandSparkles className="h-4 w-4" />
-                  <span>{t("diagram.autoLayout")}</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("diagram.autoLayout")}</TooltipContent>
-            </Tooltip>
-          )}
-          <span className="mx-1 h-5 w-px bg-slate-200" />
-          <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.zoomOut")} onClick={() => graphRef.current?.zoom(-0.1)}><ZoomOut className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.zoomOut")}</TooltipContent></Tooltip>
-          <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.zoomIn")} onClick={() => graphRef.current?.zoom(0.1)}><ZoomIn className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.zoomIn")}</TooltipContent></Tooltip>
-          <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.fit")} onClick={() => { const graph = graphRef.current; if (graph) fitDiagramContent(graph, document, containerRef.current); }}><Maximize2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.fit")}</TooltipContent></Tooltip>
-          <Select value={theme} disabled={readOnly} onValueChange={(value) => applyTheme(value as DiagramTheme)}>
-            <SelectTrigger className="h-8 w-[8.5rem] gap-2" aria-label={t("diagram.theme")}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="brand" textValue={t("diagram.themeBrand")}><span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border border-black/10" style={{ background: resolveDiagramPalette("brand", resolvedTheme).topicFill }} />{t("diagram.themeBrand")}</span></SelectItem>
-              <SelectItem value="ocean" textValue={t("diagram.themeOcean")}><span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border border-black/10" style={{ background: resolveDiagramPalette("ocean", resolvedTheme).topicFill }} />{t("diagram.themeOcean")}</span></SelectItem>
-              <SelectItem value="ink" textValue={t("diagram.themeInk")}><span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border border-black/10" style={{ background: resolveDiagramPalette("ink", resolvedTheme).nodeFill }} />{t("diagram.themeInk")}</span></SelectItem>
-            </SelectContent>
-          </Select>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline"><Download className="h-4 w-4" />{t("diagram.export")}</Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onSelect={() => exportDiagram("png")}><FileImage className="h-4 w-4" />{t("diagram.exportPng")}</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => exportDiagram("svg")}><FileCode2 className="h-4 w-4" />{t("diagram.exportSvg")}</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {selectedNodeId && !readOnly && (
-            <div className="ml-auto flex min-w-[220px] flex-1 items-center gap-2 sm:max-w-sm">
-              <span className="shrink-0 text-xs font-medium text-slate-500">{t("diagram.nodeText")}</span>
-              <Input value={selectedNodeLabel} maxLength={120} onChange={(event) => updateSelectedLabel(event.target.value)} />
-            </div>
-          )}
-          {selectedEdgeId && !readOnly && (
-            <div className="ml-auto flex min-w-[220px] flex-1 items-center gap-2 sm:max-w-sm">
-              <span className="shrink-0 text-xs font-medium text-slate-500">{t("diagram.edgeText")}</span>
-              <Input value={selectedEdgeLabel} maxLength={80} onChange={(event) => updateSelectedEdgeLabel(event.target.value)} />
-            </div>
-          )}
-        </div>
+          theme={theme}
+        />
         <div className="relative min-h-0 flex-1">
           <div ref={containerRef} className="edgeever-diagram-canvas absolute inset-0 touch-none outline-none" data-diagram-appearance={resolvedTheme} data-diagram-kind={document.kind} data-diagram-theme={theme} tabIndex={0} aria-label={t("diagram.canvas", { type: kindLabel })} />
           {flowQuickCreate ? (

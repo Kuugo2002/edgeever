@@ -351,6 +351,7 @@ export const enUS = {
     zoomOut: "Zoom out",
     fit: "Fit diagram",
     autoLayout: "Auto-arrange",
+    toolbar: "Diagram toolbar",
     theme: "Diagram theme",
     themeBrand: "Forest Green",
     themeOcean: "Mint paper",

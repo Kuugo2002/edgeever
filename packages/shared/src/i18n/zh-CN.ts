@@ -351,6 +351,7 @@ export const zhCN = {
     zoomOut: "缩小",
     fit: "适应画布",
     autoLayout: "自动整理布局",
+    toolbar: "图形工具栏",
     theme: "图表主题",
     themeBrand: "森绿",
     themeOcean: "薄荷纸",
