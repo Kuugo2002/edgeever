@@ -97,4 +97,26 @@ describe("diagram auto layout", () => {
       expect(child.y + child.height).toBeLessThan(boundary.y + boundary.height);
     }
   });
+
+  test("wraps a long architecture pipeline by boundary instead of shrinking it into one row", () => {
+    const nodes = [];
+    const edges = [];
+    let previousId;
+    for (let groupIndex = 0; groupIndex < 4; groupIndex += 1) {
+      const boundaryId = `stage-${groupIndex}`;
+      nodes.push({ id: boundaryId, label: `Stage ${groupIndex}`, type: "boundary" });
+      for (let nodeIndex = 0; nodeIndex < 3; nodeIndex += 1) {
+        const id = `${boundaryId}-node-${nodeIndex}`;
+        nodes.push({ id, label: id, type: "service", parentId: boundaryId });
+        if (previousId) edges.push({ source: previousId, target: id });
+        previousId = id;
+      }
+    }
+    const document = compileDiagramIr({ kind: "architecture", nodes, edges });
+    const boundaries = document.nodes.filter((node) => node.shape === "boundary");
+    const contentWidth = Math.max(...boundaries.map((node) => node.x + node.width))
+      - Math.min(...boundaries.map((node) => node.x));
+    expect(contentWidth).toBeLessThanOrEqual(1480);
+    expect(new Set(boundaries.map((node) => node.y)).size).toBeGreaterThan(1);
+  });
 });

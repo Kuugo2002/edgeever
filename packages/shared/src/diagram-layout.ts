@@ -56,6 +56,9 @@ export type DiagramIr = {
 
 const MIND_MAP_HORIZONTAL_GAP = 72;
 const MIND_MAP_VERTICAL_GAP = 16;
+const ARCHITECTURE_LAYOUT_ROW_WIDTH = 1480;
+const ARCHITECTURE_GROUP_HORIZONTAL_GAP = 72;
+const ARCHITECTURE_GROUP_VERTICAL_GAP = 88;
 
 const visualTextUnits = (label: string) => Array.from(label).reduce(
   (total, character) => total + (/[^\u0000-\u00ff]/.test(character) ? 1 : 0.55),
@@ -173,6 +176,75 @@ const computeMindMapLayout = (
   return positions;
 };
 
+const wrapArchitectureGroups = (
+  document: DiagramDocument,
+  positions: DiagramLayoutPositions,
+) => {
+  const nodeById = new Map(document.nodes.map((node) => [node.id, node]));
+  const topLevelBoundaryId = (nodeId: string) => {
+    let current = nodeById.get(nodeId);
+    let boundaryId: string | undefined;
+    const visited = new Set<string>();
+    while (current?.parentId && !visited.has(current.parentId)) {
+      visited.add(current.parentId);
+      const parent = nodeById.get(current.parentId);
+      if (!parent) break;
+      if (parent.shape === "boundary") boundaryId = parent.id;
+      current = parent;
+    }
+    return boundaryId;
+  };
+
+  const topLevelBoundaries = document.nodes.filter((node) => (
+    node.shape === "boundary" && (!node.parentId || nodeById.get(node.parentId)?.shape !== "boundary")
+  ));
+  if (topLevelBoundaries.length < 2) return positions;
+
+  const groups = topLevelBoundaries.flatMap((boundary) => {
+    const members = document.nodes.filter((node) => (
+      node.shape !== "boundary" && topLevelBoundaryId(node.id) === boundary.id && positions[node.id]
+    ));
+    if (members.length === 0) return [];
+    const left = Math.min(...members.map((node) => positions[node.id].x));
+    const top = Math.min(...members.map((node) => positions[node.id].y));
+    const right = Math.max(...members.map((node) => positions[node.id].x + node.width));
+    const bottom = Math.max(...members.map((node) => positions[node.id].y + node.height));
+    return [{
+      boundary,
+      members: document.nodes.filter((node) => node.id === boundary.id || topLevelBoundaryId(node.id) === boundary.id),
+      left,
+      top,
+      width: Math.max(260, right - left + 72),
+      height: Math.max(180, bottom - top + 92),
+    }];
+  }).sort((left, right) => left.left - right.left || left.top - right.top || left.boundary.id.localeCompare(right.boundary.id));
+  if (groups.length < 2) return positions;
+
+  const contentLeft = Math.min(...groups.map((group) => group.left - 36));
+  const contentRight = Math.max(...groups.map((group) => group.left - 36 + group.width));
+  if (contentRight - contentLeft <= ARCHITECTURE_LAYOUT_ROW_WIDTH) return positions;
+
+  let cursorX = 32;
+  let cursorY = 32;
+  let rowHeight = 0;
+  for (const group of groups) {
+    if (cursorX > 32 && cursorX + group.width > 32 + ARCHITECTURE_LAYOUT_ROW_WIDTH) {
+      cursorX = 32;
+      cursorY += rowHeight + ARCHITECTURE_GROUP_VERTICAL_GAP;
+      rowHeight = 0;
+    }
+    const deltaX = cursorX + 36 - group.left;
+    const deltaY = cursorY + 56 - group.top;
+    for (const node of group.members) {
+      const position = positions[node.id] ?? { x: node.x, y: node.y };
+      positions[node.id] = { x: position.x + deltaX, y: position.y + deltaY };
+    }
+    cursorX += group.width + ARCHITECTURE_GROUP_HORIZONTAL_GAP;
+    rowHeight = Math.max(rowHeight, group.height);
+  }
+  return positions;
+};
+
 export const computeDiagramLayout = (
   document: DiagramDocument,
   options: DiagramLayoutOptions = {},
@@ -198,7 +270,7 @@ export const computeDiagramLayout = (
   }
 
   runDagreLayout(layoutGraph);
-  return Object.fromEntries(document.nodes.flatMap((node) => {
+  const positions = Object.fromEntries(document.nodes.flatMap((node) => {
     if (node.shape === "boundary") return [[node.id, { x: node.x, y: node.y }]];
     const position = layoutGraph.node(node.id) as { x: number; y: number } | undefined;
     if (!position) return [];
@@ -207,6 +279,7 @@ export const computeDiagramLayout = (
       y: Math.round(position.y - node.height / 2),
     }]];
   }));
+  return document.kind === "architecture" ? wrapArchitectureGroups(document, positions) : positions;
 };
 
 const irNodeShape = (kind: DiagramKind, type: DiagramIrNodeType | undefined): DiagramNodeShape => {

@@ -875,8 +875,14 @@ const diagramEditorSnapshot = (title: string, document: DiagramDocument) => JSON
   },
 });
 
-const fitDiagramContent = (graph: Graph, document: DiagramDocument, container: HTMLElement | null, padding = 32) => {
-  graph.zoomToFit({ padding, maxScale: document.kind === "mind-map" ? 1 : 0.84 });
+const fitDiagramContent = (
+  graph: Graph,
+  document: DiagramDocument,
+  container: HTMLElement | null,
+  padding = 32,
+  minScale?: number,
+) => {
+  graph.zoomToFit({ padding, maxScale: document.kind === "mind-map" ? 1 : 0.84, ...(minScale ? { minScale } : {}) });
   if (!container) return;
   const anchor = document.kind === "mind-map"
     ? graph.getNodes().find((node) => !node.getData<NodeData>()?.parentId)
@@ -1810,7 +1816,7 @@ export const DiagramEditorPane = ({
     }
     if (document.kind === "architecture") fitArchitectureBoundaries(graph);
     graph.stopBatch("layout");
-    fitDiagramContent(graph, document, containerRef.current, 40);
+    fitDiagramContent(graph, document, containerRef.current, 40, document.kind === "architecture" ? 0.64 : undefined);
     if (changed) {
       setDirty(savedSnapshotRef.current !== diagramEditorSnapshot(
         titleRef.current,
