@@ -81,6 +81,9 @@ describe("store delivery command", () => {
     expect(workflow).toContain(
       "APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.EDGEEVER_APPLE_API_KEY_BASE64 }}",
     );
+    expect(workflow).toContain(
+      'DELIVER_PRECHECK_INCLUDE_IN_APP_PURCHASES: "false"',
+    );
     const fastfile = readFileSync(
       new URL("../apps/mobile/fastlane/Fastfile", import.meta.url),
       "utf8",

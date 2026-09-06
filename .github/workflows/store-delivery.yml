@@ -353,6 +353,7 @@ jobs:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.EDGEEVER_APPLE_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.EDGEEVER_APPLE_API_KEY_BASE64 }}
           APP_STORE_VERSION: ${{ needs.plan.outputs.version }}
+          DELIVER_PRECHECK_INCLUDE_IN_APP_PURCHASES: "false"
         run: |
           test -n "$APP_STORE_CONNECT_API_ISSUER_ID"
           test -n "$APP_STORE_CONNECT_API_KEY_ID"
