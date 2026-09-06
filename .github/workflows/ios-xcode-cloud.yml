@@ -332,7 +332,7 @@ jobs:
 
       - name: Submit App Store build for review
         env:
-          APP_STORE_BUILD_NUMBER: "44"
+          APP_STORE_BUILD_NUMBER: "45"
           APP_STORE_CONNECT_API_ISSUER_ID: ${{ secrets.EDGEEVER_APPLE_API_ISSUER }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.EDGEEVER_APPLE_API_KEY_ID }}
           APP_STORE_CONNECT_API_KEY_P8_BASE64: ${{ secrets.EDGEEVER_APPLE_API_KEY_BASE64 }}
