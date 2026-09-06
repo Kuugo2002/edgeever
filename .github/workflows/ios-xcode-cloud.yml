@@ -148,6 +148,31 @@ jobs:
                                   f"location={location} "
                                   f"message={issue_attributes.get('message')}"
                               )
+                          artifacts = api(
+                              "GET",
+                              f"/v1/ciBuildActions/{action['id']}/artifacts?limit=200&"
+                              "fields%5BciArtifacts%5D=fileType,fileName,fileSize,downloadUrl",
+                          )
+                          for artifact in artifacts.get("data", []):
+                              artifact_attributes = artifact.get("attributes") or {}
+                              file_type = artifact_attributes.get("fileType")
+                              file_name = artifact_attributes.get("fileName") or artifact["id"]
+                              print(
+                                  f"  - artifact={file_type} name={file_name} "
+                                  f"size={artifact_attributes.get('fileSize')}"
+                              )
+                              if file_type == "LOG_BUNDLE" and artifact_attributes.get("downloadUrl"):
+                                  output_directory = os.path.join(
+                                      os.environ["RUNNER_TEMP"], "xcode-cloud-logs"
+                                  )
+                                  os.makedirs(output_directory, exist_ok=True)
+                                  output_path = os.path.join(
+                                      output_directory, os.path.basename(file_name)
+                                  )
+                                  urllib.request.urlretrieve(
+                                      artifact_attributes["downloadUrl"], output_path
+                                  )
+                                  print(f"  - downloaded log bundle to {output_path}")
                       builds = api(
                           "GET",
                           f"/v1/ciBuildRuns/{build_run_id}/builds?limit=50&"
@@ -279,6 +304,15 @@ jobs:
               f"status={attributes.get('executionProgress')}"
           )
           PY
+
+      - name: Upload failed Xcode Cloud logs
+        if: failure() && inputs.mode == 'monitor'
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-cloud-logs-${{ inputs.build_run_id }}
+          path: ${{ runner.temp }}/xcode-cloud-logs
+          if-no-files-found: warn
+          retention-days: 7
 
   submit-review:
     if: github.repository == 'tianma-if/edgeever' && inputs.mode == 'submit-review'
