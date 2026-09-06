@@ -2228,7 +2228,6 @@ export const DiagramEditorPane = ({
               }
             }}
           />
-          <div className="shrink-0 rounded-full border border-[var(--brand-green-border)] bg-[var(--brand-green-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--brand-green-text)]">{kindLabel}</div>
         </div>
       </header>
 

@@ -50,6 +50,9 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain('t("templates.saveAsTemplate")');
     expect(source).toContain("<RevisionHistoryDialog");
     expect(source).toContain("<ShareMemoDialog");
+    expect(source).not.toContain('>{kindLabel}</div>');
+    expect(source).toContain('placeholder={kindLabel}');
+    expect(source).toContain('aria-label={t("diagram.canvas", { type: kindLabel })}');
   });
 
   test("autosaves diagram changes without a persistent save button", () => {
