@@ -326,8 +326,6 @@ export const enUS = {
       externalApi: "External API",
       thirdPartyService: "Third-party service",
     },
-    architectureConnectHint: "Drag a handle to connect architecture components",
-    connectHint: "Drag a handle to connect, or drop on canvas to create the next node",
     newTopic: "New topic",
     newStep: "New step",
     newDecision: "Decision",

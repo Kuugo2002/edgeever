@@ -38,7 +38,6 @@ import {
   Globe2,
   HardDrive,
   History as HistoryIcon,
-  LayoutDashboard,
   KeyRound,
   Layers3,
   ListTree,
@@ -64,6 +63,7 @@ import {
   SquareFunction,
   Trash2,
   Undo2,
+  WandSparkles,
   Webhook,
   Workflow,
   Zap,
@@ -102,7 +102,15 @@ import { useAppearanceTheme } from "@/components/ThemeProvider";
 import { api } from "@/lib/api";
 import { EDITOR_LOCAL_SAVE_DELAY_MS } from "@/lib/app-helpers";
 import { copyTextToClipboard } from "@/lib/clipboard";
-import { compactArchitectureNodeSize, compactFlowchartNodeSize, compactMindMapNodeSize, computeDiagramLayout } from "@/lib/diagram-layout";
+import {
+  compactArchitectureNodeSize,
+  compactFlowchartNodeSize,
+  compactMindMapNodeSize,
+  computeDiagramLayout,
+  computeDiagramLayoutResult,
+  getDiagramLayoutViewport,
+  type DiagramLayoutViewport,
+} from "@/lib/diagram-layout";
 import { resolveDiagramPalette, type DiagramAppearance } from "@/lib/diagram-theme";
 import { isLocalMemoId } from "@/lib/local-mirror";
 import { isBrowserOffline } from "@/lib/network-status";
@@ -880,11 +888,17 @@ const fitDiagramContent = (
   document: DiagramDocument,
   container: HTMLElement | null,
   padding = 32,
-  minScale?: number,
+  viewport?: DiagramLayoutViewport,
 ) => {
-  graph.zoomToFit({ padding, maxScale: document.kind === "mind-map" ? 1 : 0.84, ...(minScale ? { minScale } : {}) });
+  const policy = viewport ?? getDiagramLayoutViewport(document.kind);
+  graph.zoomToFit({
+    padding,
+    maxScale: policy.maxScale,
+    ...(policy.minScale ? { minScale: policy.minScale } : {}),
+  });
   if (!container) return;
-  const anchor = document.kind === "mind-map"
+  if (policy.anchor === "center") return;
+  const anchor = policy.anchor === "root"
     ? graph.getNodes().find((node) => !node.getData<NodeData>()?.parentId)
     : graph.getNodes().reduce<Node | null>((leftmost, node) => (
         !leftmost || node.getBBox().x < leftmost.getBBox().x ? node : leftmost
@@ -894,26 +908,6 @@ const fitDiagramContent = (
   const desiredLeft = Math.max(32, Math.min(72, container.clientWidth * 0.055));
   const translation = graph.translate();
   graph.translate(translation.tx + desiredLeft - contentLeft, translation.ty);
-};
-
-const fitArchitectureBoundaries = (graph: Graph) => {
-  const nodes = graph.getNodes();
-  for (const boundary of nodes.filter((node) => node.getData<NodeData>()?.shape === "boundary")) {
-    const children = nodes.filter((node) => node.getData<NodeData>()?.parentId === boundary.id);
-    if (children.length === 0) continue;
-    const positions = new Map(children.map((node) => [node.id, node.getPosition()]));
-    const boxes = children.map((node) => node.getBBox());
-    const left = Math.min(...boxes.map((box) => box.x)) - 36;
-    const top = Math.min(...boxes.map((box) => box.y)) - 56;
-    const right = Math.max(...boxes.map((box) => box.x + box.width)) + 36;
-    const bottom = Math.max(...boxes.map((box) => box.y + box.height)) + 36;
-    boundary.position(left, top);
-    boundary.resize(Math.max(260, right - left), Math.max(180, bottom - top));
-    for (const child of children) {
-      const position = positions.get(child.id);
-      if (position) child.position(position.x, position.y);
-    }
-  }
 };
 
 const applyGraphPalette = (
@@ -1802,21 +1796,27 @@ export const DiagramEditorPane = ({
   const applyAutoLayout = () => {
     const graph = graphRef.current;
     if (!graph || !document || readOnly || graph.getNodes().length === 0) return;
-    const positions = computeDiagramLayout(graphToDocument(graph, document.kind, themeRef.current));
+    const layout = computeDiagramLayoutResult(graphToDocument(graph, document.kind, themeRef.current));
     graph.startBatch("layout");
     let changed = false;
-    for (const node of graph.getNodes()) {
-      const position = positions[node.id];
-      if (!position) continue;
+    for (const nodeId of layout.nodeOrder) {
+      const node = graph.getCellById(nodeId);
+      const geometry = layout.nodes[nodeId];
+      if (!node?.isNode()) continue;
+      if (!geometry) continue;
       const currentPosition = node.getPosition();
-      if (currentPosition.x !== position.x || currentPosition.y !== position.y) {
+      const currentSize = node.getSize();
+      if (currentPosition.x !== geometry.x || currentPosition.y !== geometry.y) {
         changed = true;
-        node.position(position.x, position.y);
+        node.position(geometry.x, geometry.y);
+      }
+      if (currentSize.width !== geometry.width || currentSize.height !== geometry.height) {
+        changed = true;
+        node.resize(geometry.width, geometry.height);
       }
     }
-    if (document.kind === "architecture") fitArchitectureBoundaries(graph);
     graph.stopBatch("layout");
-    fitDiagramContent(graph, document, containerRef.current, 40, document.kind === "architecture" ? 0.64 : undefined);
+    fitDiagramContent(graph, document, containerRef.current, 40, layout.viewport);
     if (changed) {
       setDirty(savedSnapshotRef.current !== diagramEditorSnapshot(
         titleRef.current,
@@ -2162,36 +2162,40 @@ export const DiagramEditorPane = ({
                 ]}
               />
             ) : document.kind === "architecture" ? (
-              <>
-                <ArchitectureComponentLibrary
-                  onAdd={(item) => addNode(item.shape, {
-                    label: t(item.labelKey),
-                    resourceIcon: architectureResourceIcon(item),
-                  })}
-                  t={t}
-                />
-                <span className="hidden items-center gap-1.5 px-2 text-xs text-slate-500 xl:flex"><Link2 className="h-3.5 w-3.5" />{t("diagram.architectureConnectHint")}</span>
-              </>
+              <ArchitectureComponentLibrary
+                onAdd={(item) => addNode(item.shape, {
+                  label: t(item.labelKey),
+                  resourceIcon: architectureResourceIcon(item),
+                })}
+                t={t}
+              />
             ) : (
-              <>
-                <DiagramInsertMenu
-                  icon={Box}
-                  label={t("diagram.addStep")}
-                  items={[
-                    { icon: Box, label: t("diagram.addStep"), onSelect: () => addNode("process") },
-                    { icon: Diamond, label: t("diagram.addDecision"), onSelect: () => addNode("decision") },
-                    { icon: Circle, label: t("diagram.addTerminator"), onSelect: () => addNode("terminator") },
-                  ]}
-                />
-                <span className="hidden items-center gap-1.5 px-2 text-xs text-slate-500 xl:flex"><Link2 className="h-3.5 w-3.5" />{t("diagram.connectHint")}</span>
-              </>
+              <DiagramInsertMenu
+                icon={Box}
+                label={t("diagram.addStep")}
+                items={[
+                  { icon: Box, label: t("diagram.addStep"), onSelect: () => addNode("process") },
+                  { icon: Diamond, label: t("diagram.addDecision"), onSelect: () => addNode("decision") },
+                  { icon: Circle, label: t("diagram.addTerminator"), onSelect: () => addNode("terminator") },
+                ]}
+              />
             )
           )}
           <span className="mx-1 h-5 w-px bg-slate-200" />
           <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.undo")} disabled={!historyState.undo || readOnly} onClick={() => runHistoryAction("undo")}><Undo2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.undo")}</TooltipContent></Tooltip>
           <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.redo")} disabled={!historyState.redo || readOnly} onClick={() => runHistoryAction("redo")}><Redo2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.redo")}</TooltipContent></Tooltip>
           {!readOnly && <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.deleteSelection")} disabled={!hasSelection} onClick={removeSelected}><Trash2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.deleteSelection")}</TooltipContent></Tooltip>}
-          {!readOnly && <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.autoLayout")} onClick={applyAutoLayout}><LayoutDashboard className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.autoLayout")}</TooltipContent></Tooltip>}
+          {!readOnly && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="sm" variant="ghost" className="gap-1.5 px-2.5" aria-label={t("diagram.autoLayout")} onClick={applyAutoLayout}>
+                  <WandSparkles className="h-4 w-4" />
+                  <span>{t("diagram.autoLayout")}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("diagram.autoLayout")}</TooltipContent>
+            </Tooltip>
+          )}
           <span className="mx-1 h-5 w-px bg-slate-200" />
           <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.zoomOut")} onClick={() => graphRef.current?.zoom(-0.1)}><ZoomOut className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.zoomOut")}</TooltipContent></Tooltip>
           <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.zoomIn")} onClick={() => graphRef.current?.zoom(0.1)}><ZoomIn className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.zoomIn")}</TooltipContent></Tooltip>

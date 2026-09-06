@@ -77,8 +77,16 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain('connector: { name: kind === "mind-map" ? "smooth" : "rounded"');
     expect(source).toContain('router: "normal"');
     expect(source).not.toContain('name: "manhattan"');
-    expect(source).toContain('maxScale: document.kind === "mind-map" ? 1 : 0.84');
+    expect(source).toContain("maxScale: policy.maxScale");
+    expect(source).toContain("policy.minScale ? { minScale: policy.minScale }");
+    expect(source).toContain("getDiagramLayoutViewport(document.kind)");
     expect(source).toContain("fitDiagramContent(graph, document, containerRef.current);");
+  });
+
+  test("labels auto layout directly instead of relying on an ambiguous icon", () => {
+    expect(source).toContain('<WandSparkles className="h-4 w-4" />');
+    expect(source).toContain('<span>{t("diagram.autoLayout")}</span>');
+    expect(source).not.toContain('<Button size="icon" variant="ghost" aria-label={t("diagram.autoLayout")}');
   });
 
   test("exposes connection handles on flowcharts and architecture components with safe connection rules", () => {
@@ -106,8 +114,10 @@ describe("diagram editor canvas surface", () => {
     expect(source).not.toContain('onClick={() => addNode("service")}');
     expect(source).toContain('{ shape: "database", icon: Database');
     expect(source).toContain('{ shape: "boundary", icon: Box');
-    expect(source).toContain('t("diagram.architectureConnectHint")');
-    expect(source).toContain("fitArchitectureBoundaries(graph)");
+    expect(source).not.toContain('t("diagram.architectureConnectHint")');
+    expect(source).not.toContain('t("diagram.connectHint")');
+    expect(source).not.toContain("fitArchitectureBoundaries(graph)");
+    expect(source).toContain("computeDiagramLayoutResult");
     expect(source).toContain("parent.addChild(node)");
     expect(source).toContain("updateSelectedEdgeLabel");
     expect(source).toContain('t("diagram.edgeText")');

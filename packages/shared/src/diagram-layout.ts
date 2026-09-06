@@ -12,6 +12,25 @@ import {
 
 export type DiagramLayoutPositions = Record<string, { x: number; y: number }>;
 
+export type DiagramLayoutNodeGeometry = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type DiagramLayoutViewport = {
+  anchor: "root" | "leftmost" | "center";
+  maxScale: number;
+  minScale?: number;
+};
+
+export type DiagramLayoutResult = {
+  nodes: Record<string, DiagramLayoutNodeGeometry>;
+  nodeOrder: string[];
+  viewport: DiagramLayoutViewport;
+};
+
 export type DiagramLayoutOptions = {
   insertedNodeId?: string;
   insertAfterNodeId?: string;
@@ -56,6 +75,10 @@ export type DiagramIr = {
 
 const MIND_MAP_HORIZONTAL_GAP = 72;
 const MIND_MAP_VERTICAL_GAP = 16;
+const MIND_MAP_TWO_SIDED_THRESHOLD = 5;
+const FLOWCHART_DETACHED_GAP = 72;
+const FLOWCHART_DETACHED_ROW_GAP = 24;
+const FLOWCHART_DETACHED_ROW_WIDTH = 960;
 const ARCHITECTURE_LAYOUT_ROW_WIDTH = 1480;
 const ARCHITECTURE_GROUP_HORIZONTAL_GAP = 72;
 const ARCHITECTURE_GROUP_VERTICAL_GAP = 88;
@@ -144,7 +167,12 @@ const computeMindMapLayout = (
   const positions: DiagramLayoutPositions = Object.fromEntries(
     document.nodes.map((node) => [node.id, { x: node.x, y: node.y }]),
   );
-  const placeChildren = (nodeId: string, subtreeTop: number, ancestors: Set<string>) => {
+  const placeChildren = (
+    nodeId: string,
+    subtreeTop: number,
+    ancestors: Set<string>,
+    direction: 1 | -1,
+  ) => {
     const node = nodeById.get(nodeId);
     if (!node || ancestors.has(nodeId)) return;
     const nextAncestors = new Set(ancestors).add(nodeId);
@@ -158,10 +186,33 @@ const computeMindMapLayout = (
       const child = nodeById.get(childId)!;
       const childSubtreeHeight = childHeights[index];
       positions[childId] = {
-        x: positions[nodeId].x + node.width + MIND_MAP_HORIZONTAL_GAP,
+        x: direction === 1
+          ? positions[nodeId].x + node.width + MIND_MAP_HORIZONTAL_GAP
+          : positions[nodeId].x - MIND_MAP_HORIZONTAL_GAP - child.width,
         y: Math.round(cursor + (childSubtreeHeight - child.height) / 2),
       };
-      placeChildren(childId, cursor, nextAncestors);
+      placeChildren(childId, cursor, nextAncestors, direction);
+      cursor += childSubtreeHeight + MIND_MAP_VERTICAL_GAP;
+    }
+  };
+
+  const placeRootSide = (rootId: string, childIds: string[], direction: 1 | -1) => {
+    const root = nodeById.get(rootId);
+    if (!root || childIds.length === 0) return;
+    const childHeights = childIds.map((childId) => measureSubtree(childId, new Set([rootId])));
+    const sideHeight = childHeights.reduce((total, height) => total + height, 0)
+      + Math.max(0, childHeights.length - 1) * MIND_MAP_VERTICAL_GAP;
+    let cursor = root.y + root.height / 2 - sideHeight / 2;
+    for (let index = 0; index < childIds.length; index += 1) {
+      const child = nodeById.get(childIds[index])!;
+      const childSubtreeHeight = childHeights[index];
+      positions[child.id] = {
+        x: direction === 1
+          ? root.x + root.width + MIND_MAP_HORIZONTAL_GAP
+          : root.x - MIND_MAP_HORIZONTAL_GAP - child.width,
+        y: Math.round(cursor + (childSubtreeHeight - child.height) / 2),
+      };
+      placeChildren(child.id, cursor, new Set([rootId]), direction);
       cursor += childSubtreeHeight + MIND_MAP_VERTICAL_GAP;
     }
   };
@@ -170,8 +221,22 @@ const computeMindMapLayout = (
     .filter((node) => !node.parentId || !nodeById.has(node.parentId))
     .sort((left, right) => left.y - right.y || left.id.localeCompare(right.id));
   for (const root of roots) {
-    const subtreeHeight = measureSubtree(root.id, new Set());
-    placeChildren(root.id, root.y + root.height / 2 - subtreeHeight / 2, new Set());
+    const childIds = (childrenByParent.get(root.id) ?? []).filter((childId) => childId !== root.id);
+    if (childIds.length < MIND_MAP_TWO_SIDED_THRESHOLD) {
+      placeRootSide(root.id, childIds, 1);
+      continue;
+    }
+    const sides: Record<"left" | "right", { ids: string[]; height: number }> = {
+      left: { ids: [], height: 0 },
+      right: { ids: [], height: 0 },
+    };
+    for (const childId of childIds) {
+      const side = sides.right.height <= sides.left.height ? sides.right : sides.left;
+      side.ids.push(childId);
+      side.height += measureSubtree(childId, new Set([root.id])) + MIND_MAP_VERTICAL_GAP;
+    }
+    placeRootSide(root.id, sides.left.ids, -1);
+    placeRootSide(root.id, sides.right.ids, 1);
   }
   return positions;
 };
@@ -245,22 +310,23 @@ const wrapArchitectureGroups = (
   return positions;
 };
 
-export const computeDiagramLayout = (
+const computeDagreLayout = (
   document: DiagramDocument,
-  options: DiagramLayoutOptions = {},
+  options: DiagramLayoutOptions,
+  excludeBoundaries: boolean,
+  spacing: { rank: number; node: number } = { rank: 96, node: 40 },
 ): DiagramLayoutPositions => {
-  if (document.kind === "mind-map") return computeMindMapLayout(document, options);
   const layoutGraph = new graphlib.Graph();
   layoutGraph.setGraph({
     rankdir: options.direction === "top-to-bottom" ? "TB" : "LR",
-    ranksep: 96,
-    nodesep: 40,
+    ranksep: spacing.rank,
+    nodesep: spacing.node,
     marginx: 32,
     marginy: 32,
   });
   layoutGraph.setDefaultEdgeLabel(() => ({}));
 
-  const layoutNodes = document.kind === "architecture"
+  const layoutNodes = excludeBoundaries
     ? document.nodes.filter((node) => node.shape !== "boundary")
     : document.nodes;
   const layoutNodeIds = new Set(layoutNodes.map((node) => node.id));
@@ -279,8 +345,62 @@ export const computeDiagramLayout = (
       y: Math.round(position.y - node.height / 2),
     }]];
   }));
-  return document.kind === "architecture" ? wrapArchitectureGroups(document, positions) : positions;
+  return positions;
 };
+
+const placeDetachedFlowchartNodes = (
+  document: DiagramDocument,
+  positions: DiagramLayoutPositions,
+) => {
+  const nodeIds = new Set(document.nodes.map((node) => node.id));
+  const connectedIds = new Set<string>();
+  for (const edge of document.edges) {
+    if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) continue;
+    connectedIds.add(edge.source);
+    connectedIds.add(edge.target);
+  }
+  const connected = document.nodes.filter((node) => connectedIds.has(node.id));
+  const detached = document.nodes
+    .filter((node) => !connectedIds.has(node.id))
+    .sort((left, right) => left.y - right.y || left.x - right.x || left.id.localeCompare(right.id));
+  if (connected.length === 0 || detached.length === 0) return positions;
+
+  const contentLeft = Math.min(...connected.map((node) => positions[node.id].x));
+  const contentBottom = Math.max(...connected.map((node) => positions[node.id].y + node.height));
+  let cursorX = contentLeft;
+  let cursorY = contentBottom + FLOWCHART_DETACHED_GAP;
+  let rowHeight = 0;
+  for (const node of detached) {
+    if (cursorX > contentLeft && cursorX + node.width > contentLeft + FLOWCHART_DETACHED_ROW_WIDTH) {
+      cursorX = contentLeft;
+      cursorY += rowHeight + FLOWCHART_DETACHED_ROW_GAP;
+      rowHeight = 0;
+    }
+    positions[node.id] = { x: cursorX, y: cursorY };
+    cursorX += node.width + 40;
+    rowHeight = Math.max(rowHeight, node.height);
+  }
+  return positions;
+};
+
+const computeFlowchartLayout = (document: DiagramDocument, options: DiagramLayoutOptions) => (
+  placeDetachedFlowchartNodes(
+    document,
+    computeDagreLayout(
+      document,
+      { ...options, direction: options.direction ?? "top-to-bottom" },
+      false,
+      { rank: 80, node: 48 },
+    ),
+  )
+);
+
+const computeArchitectureLayout = (document: DiagramDocument, options: DiagramLayoutOptions) => (
+  wrapArchitectureGroups(
+    document,
+    computeDagreLayout(document, { ...options, direction: options.direction ?? "left-to-right" }, true),
+  )
+);
 
 const irNodeShape = (kind: DiagramKind, type: DiagramIrNodeType | undefined): DiagramNodeShape => {
   if (kind === "mind-map") return "topic";
@@ -288,7 +408,7 @@ const irNodeShape = (kind: DiagramKind, type: DiagramIrNodeType | undefined): Di
   return (type ?? "service") as DiagramNodeShape;
 };
 
-const fitArchitectureBoundaries = (document: DiagramDocument) => {
+const finalizeArchitectureLayout = (document: DiagramDocument) => {
   const nodeById = new Map(document.nodes.map((node) => [node.id, node]));
   const boundaryDepth = (nodeId: string) => {
     let depth = 0;
@@ -349,6 +469,88 @@ const fitArchitectureBoundaries = (document: DiagramDocument) => {
   }
 };
 
+export type DiagramLayoutStrategy = {
+  kind: DiagramKind;
+  layout: (document: DiagramDocument, options: DiagramLayoutOptions) => DiagramLayoutPositions;
+  finalize?: (document: DiagramDocument) => void;
+  viewport: DiagramLayoutViewport;
+};
+
+const DIAGRAM_LAYOUT_STRATEGIES: Record<DiagramKind, DiagramLayoutStrategy> = {
+  "mind-map": {
+    kind: "mind-map",
+    layout: computeMindMapLayout,
+    viewport: { anchor: "root", maxScale: 1 },
+  },
+  flowchart: {
+    kind: "flowchart",
+    layout: computeFlowchartLayout,
+    viewport: { anchor: "center", maxScale: 0.9 },
+  },
+  architecture: {
+    kind: "architecture",
+    layout: computeArchitectureLayout,
+    finalize: finalizeArchitectureLayout,
+    viewport: { anchor: "leftmost", maxScale: 0.84, minScale: 0.64 },
+  },
+};
+
+export const getDiagramLayoutViewport = (kind: DiagramKind): DiagramLayoutViewport => ({
+  ...DIAGRAM_LAYOUT_STRATEGIES[kind].viewport,
+});
+
+export const computeDiagramLayoutResult = (
+  document: DiagramDocument,
+  options: DiagramLayoutOptions = {},
+): DiagramLayoutResult => {
+  const strategy = DIAGRAM_LAYOUT_STRATEGIES[document.kind];
+  const layoutDocument: DiagramDocument = {
+    ...document,
+    nodes: document.nodes.map((node) => ({ ...node })),
+    edges: document.edges.map((edge) => ({ ...edge })),
+  };
+  const positions = strategy.layout(layoutDocument, options);
+  for (const node of layoutDocument.nodes) {
+    const position = positions[node.id];
+    if (position && Number.isFinite(position.x) && Number.isFinite(position.y)) {
+      node.x = position.x;
+      node.y = position.y;
+    }
+  }
+  strategy.finalize?.(layoutDocument);
+  const nodeById = new Map(layoutDocument.nodes.map((node) => [node.id, node]));
+  const nodeDepth = (nodeId: string) => {
+    let depth = 0;
+    let current = nodeById.get(nodeId);
+    const visited = new Set<string>();
+    while (current?.parentId && !visited.has(current.parentId)) {
+      visited.add(current.parentId);
+      const parent = nodeById.get(current.parentId);
+      if (!parent) break;
+      depth += 1;
+      current = parent;
+    }
+    return depth;
+  };
+  return {
+    nodes: Object.fromEntries(layoutDocument.nodes.map((node) => [node.id, {
+      x: node.x,
+      y: node.y,
+      width: node.width,
+      height: node.height,
+    }])),
+    nodeOrder: layoutDocument.nodes
+      .map((node) => node.id)
+      .sort((left, right) => nodeDepth(left) - nodeDepth(right)),
+    viewport: getDiagramLayoutViewport(document.kind),
+  };
+};
+
+export const computeDiagramLayout = (
+  document: DiagramDocument,
+  options: DiagramLayoutOptions = {},
+): DiagramLayoutPositions => DIAGRAM_LAYOUT_STRATEGIES[document.kind].layout(document, options);
+
 export const compileDiagramIr = (ir: DiagramIr): DiagramDocument => {
   const nodes = ir.nodes.map((node, index) => {
     const shape = irNodeShape(ir.kind, node.type);
@@ -390,13 +592,12 @@ export const compileDiagramIr = (ir: DiagramIr): DiagramDocument => {
     nodes,
     edges,
   };
-  const positions = computeDiagramLayout(document, {
+  const layout = computeDiagramLayoutResult(document, {
     direction: ir.layout?.direction ?? (ir.kind === "flowchart" ? "top-to-bottom" : "left-to-right"),
   });
   for (const node of document.nodes) {
-    const position = positions[node.id];
-    if (position) Object.assign(node, position);
+    const geometry = layout.nodes[node.id];
+    if (geometry) Object.assign(node, geometry);
   }
-  if (ir.kind === "architecture") fitArchitectureBoundaries(document);
   return document;
 };

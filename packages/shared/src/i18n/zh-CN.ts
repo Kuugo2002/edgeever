@@ -326,8 +326,6 @@ export const zhCN = {
       externalApi: "外部 API",
       thirdPartyService: "第三方服务",
     },
-    architectureConnectHint: "拖动端点连接架构组件",
-    connectHint: "拖动端点连线；松开在空白处可创建后续节点",
     newTopic: "新主题",
     newStep: "新步骤",
     newDecision: "判断条件",
