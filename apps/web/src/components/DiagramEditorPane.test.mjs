@@ -115,6 +115,7 @@ describe("diagram editor canvas surface", () => {
   test("organizes architecture resources in a searchable category library", () => {
     expect(source).toContain("ARCHITECTURE_LIBRARY_CATEGORIES");
     expect(source).toContain('t("diagram.componentLibrary")');
+    expect(source).toContain('onPointerEnter={() => setOpen(true)}');
     expect(source).toContain('t("diagram.componentSearch")');
     expect(source).toContain('labelKey: "diagram.componentCategoryExperience"');
     expect(source).toContain('labelKey: "diagram.componentCategoryServices"');
@@ -139,6 +140,16 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain('inferArchitectureResourceIcon(node.label, t)');
     expect(source).toContain('.render({}, null).props.iconNode');
     expect(source).not.toContain('className="line-clamp-2"');
+  });
+
+  test("opens every diagram insertion library immediately on pointer hover", () => {
+    expect(source).toContain("const DiagramInsertMenu = ({");
+    expect(source.match(/onPointerEnter=\{\(\) => setOpen\(true\)\}/g)?.length).toBe(2);
+    expect(source).toContain('label={t("diagram.addTopic")}');
+    expect(source).toContain('label: t("diagram.addSiblingTopic")');
+    expect(source).toContain('label={t("diagram.addStep")}');
+    expect(source).toContain('label: t("diagram.addDecision")');
+    expect(source).toContain('label: t("diagram.addTerminator")');
   });
 
   test("shows connection handles only on selected flowchart nodes", () => {

@@ -250,6 +250,7 @@ export const zhCN = {
     title: "图表标题",
     canvas: "{{type}}画布",
     addTopic: "添加子主题",
+    addSiblingTopic: "添加同级主题",
     mindMapShortcuts: "Tab 添加子主题，Enter 添加同级主题",
     addStep: "添加步骤",
     flowchartShortcuts: "Tab 连接后续节点，Enter 编辑，⌘/Ctrl+D 复制，方向键微调",

@@ -250,6 +250,7 @@ export const enUS = {
     title: "Diagram title",
     canvas: "{{type}} canvas",
     addTopic: "Add child topic",
+    addSiblingTopic: "Add sibling topic",
     mindMapShortcuts: "Tab adds a child; Enter adds a sibling",
     addStep: "Add step",
     flowchartShortcuts: "Tab connects the next node; Enter edits; Cmd/Ctrl+D duplicates; arrow keys nudge",

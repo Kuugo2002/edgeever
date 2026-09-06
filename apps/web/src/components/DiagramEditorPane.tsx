@@ -322,7 +322,9 @@ const ArchitectureComponentLibrary = ({
       if (!nextOpen) setQuery("");
     }}>
       <DropdownMenuTrigger asChild>
-        <Button size="sm" variant="outline"><Boxes className="h-4 w-4" />{t("diagram.componentLibrary")}</Button>
+        <Button size="sm" variant="outline" onPointerEnter={() => setOpen(true)}>
+          <Boxes className="h-4 w-4" />{t("diagram.componentLibrary")}
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-[min(36rem,calc(100vh-8rem))] w-[min(30rem,calc(100vw-2rem))] overflow-y-auto p-0">
         <div className="sticky top-0 z-10 border-b border-slate-200 bg-white p-2.5">
@@ -380,6 +382,40 @@ const ArchitectureComponentLibrary = ({
             <div className="px-3 py-8 text-center text-sm text-slate-500">{t("diagram.noMatchingComponents")}</div>
           )}
         </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
+const DiagramInsertMenu = ({
+  icon: TriggerIcon,
+  items,
+  label,
+}: {
+  icon: LucideIcon;
+  items: Array<{ icon: LucideIcon; label: string; onSelect: () => void }>;
+  label: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button size="sm" variant="soft" onPointerEnter={() => setOpen(true)}>
+          <TriggerIcon className="h-4 w-4" />
+          {label}
+          <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <DropdownMenuItem key={item.label} onSelect={item.onSelect}>
+              <Icon className="h-4 w-4" />
+              {item.label}
+            </DropdownMenuItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -2074,12 +2110,14 @@ export const DiagramEditorPane = ({
         <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-slate-200 bg-white px-3 py-2">
           {!readOnly && (
             document.kind === "mind-map" ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="sm" variant="soft" onClick={() => addNode("topic")}><GitBranch className="h-4 w-4" />{t("diagram.addTopic")}</Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("diagram.mindMapShortcuts")}</TooltipContent>
-              </Tooltip>
+              <DiagramInsertMenu
+                icon={GitBranch}
+                label={t("diagram.addTopic")}
+                items={[
+                  { icon: GitBranch, label: t("diagram.addTopic"), onSelect: () => addNode("topic", { relation: "child" }) },
+                  { icon: ListTree, label: t("diagram.addSiblingTopic"), onSelect: () => addNode("topic", { relation: "sibling" }) },
+                ]}
+              />
             ) : document.kind === "architecture" ? (
               <>
                 <ArchitectureComponentLibrary
@@ -2093,14 +2131,15 @@ export const DiagramEditorPane = ({
               </>
             ) : (
               <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button size="sm" variant="soft" onClick={() => addNode("process")}><Box className="h-4 w-4" />{t("diagram.addStep")}</Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("diagram.flowchartShortcuts")}</TooltipContent>
-                </Tooltip>
-                <Tooltip><TooltipTrigger asChild><Button size="sm" variant="ghost" aria-label={t("diagram.addDecision")} onClick={() => addNode("decision")}><Diamond className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.addDecision")}</TooltipContent></Tooltip>
-                <Tooltip><TooltipTrigger asChild><Button size="sm" variant="ghost" aria-label={t("diagram.addTerminator")} onClick={() => addNode("terminator")}><Circle className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.addTerminator")}</TooltipContent></Tooltip>
+                <DiagramInsertMenu
+                  icon={Box}
+                  label={t("diagram.addStep")}
+                  items={[
+                    { icon: Box, label: t("diagram.addStep"), onSelect: () => addNode("process") },
+                    { icon: Diamond, label: t("diagram.addDecision"), onSelect: () => addNode("decision") },
+                    { icon: Circle, label: t("diagram.addTerminator"), onSelect: () => addNode("terminator") },
+                  ]}
+                />
                 <span className="hidden items-center gap-1.5 px-2 text-xs text-slate-500 xl:flex"><Link2 className="h-3.5 w-3.5" />{t("diagram.connectHint")}</span>
               </>
             )
