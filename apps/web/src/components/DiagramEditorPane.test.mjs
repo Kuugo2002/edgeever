@@ -108,7 +108,7 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain("<DiagramToolbar");
     expect(source).toContain("leading={!readOnly ? (");
     expect(toolbarSource).toContain('role="toolbar"');
-    expect(toolbarSource).toContain("{leading ? <>{leading}<ToolbarDivider /></> : null}");
+    expect(toolbarSource).toContain("{leading ? <>{leading}<MemoEditorToolbarDivider /></> : null}");
     expect(toolbarSource).toContain("{selectionEditor}");
   });
 
@@ -259,7 +259,7 @@ describe("diagram editor canvas surface", () => {
   test("keeps the desktop header compact without shrinking mobile controls", () => {
     expect(source).toContain("MEMO_EDITOR_TOP_ROW_CLASS_NAME");
     expect(source).toContain("MEMO_EDITOR_TITLE_ROW_CLASS_NAME");
-    expect(toolbarSource).toContain("MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME");
+    expect(toolbarSource).toContain("<MemoEditorToolbarRow");
   });
 
   test("repaints the graph when the application appearance changes", () => {

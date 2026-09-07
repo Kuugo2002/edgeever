@@ -4151,7 +4151,7 @@ const RichEditorPane = ({
         </div>
 
         <div className={MEMO_EDITOR_TEXT_TITLE_REGION_CLASS_NAME}>
-          <div className="min-w-0 min-[1600px]:flex-1">
+          <div className="min-w-0">
             <MemoTitleInput
               value={title}
               readOnly={effectiveReadOnly}
@@ -4163,7 +4163,7 @@ const RichEditorPane = ({
               placeholder={t("common.untitledMemo")}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-[1600px]:shrink-0 min-[1600px]:flex-nowrap">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <button
               className="flex h-7 min-w-0 max-w-full items-center gap-1 rounded-md border border-transparent bg-transparent px-1.5 text-xs font-medium text-slate-600 outline-none transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900 focus-visible:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-500/20 disabled:opacity-50 sm:hidden"
               type="button"
