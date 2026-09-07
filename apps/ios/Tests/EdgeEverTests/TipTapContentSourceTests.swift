@@ -328,6 +328,17 @@ final class TipTapContentSourceTests: XCTestCase {
                 _ = try await eval(webView, "document.querySelector('button[aria-label=\"从起点阅读\"]').click()")
                 let readingScale = try await evalInt(webView, "parseInt(document.querySelector('button[aria-label=\"恢复 100%\"]').textContent)")
                 XCTAssertEqual(readingScale, 100)
+                let scrolled = try await evalBool(webView, """
+                (function() {
+                  const canvas = document.querySelector('.edgeever-x6-diagram');
+                  const node = canvas.querySelector('.x6-node');
+                  const before = node.getBoundingClientRect().top;
+                  canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: 1200, bubbles: true, cancelable: true }));
+                  return Math.abs(node.getBoundingClientRect().top - before + 1200) < 2;
+                })()
+                """)
+                XCTAssertTrue(scrolled, "ordinary wheel must move the graph viewport")
+
                 _ = try await eval(webView, "document.querySelector('button[aria-label=\"放大\"]').click()")
                 let enlargedScale = try await evalInt(webView, "parseInt(document.querySelector('button[aria-label=\"恢复 100%\"]').textContent)")
                 XCTAssertEqual(enlargedScale, 125)

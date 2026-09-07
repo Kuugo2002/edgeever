@@ -68,6 +68,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
+  attachDiagramScroll,
   ARCHITECTURE_DIAGRAM_SCHEMA_VERSION,
   DIAGRAM_SCHEMA_VERSION,
   diagramFallbackMarkdown,
@@ -1031,9 +1032,10 @@ const MindMapFocusReader = ({ source, focusId, theme, appearance, graphHandle, o
     const layout = computeDiagramLayoutResult(readingDocument);
     const graph = new Graph({ container: container.current, autoResize: true, async: false, grid: false,
       background: { color: resolveDiagramPalette(theme, appearance).canvas }, interacting: false,
-      panning: { enabled: true, eventTypes: ["leftMouseDown", "mouseWheel"] },
+      panning: { enabled: true, eventTypes: ["leftMouseDown"] },
       mousewheel: { enabled: true, modifiers: ["ctrl", "meta"], minScale: 0.1, maxScale: 2.5 },
     });
+    const detachScroll = attachDiagramScroll(graph.container, graph);
     graph.addNodes(readingDocument.nodes.map((node) => nodeMetadata({ ...node, ...layout.nodes[node.id] }, theme, "mind-map", appearance)));
     graph.addEdges(readingDocument.edges.map((edge) => edgeMetadata(edge, "mind-map", theme, appearance)));
     applyMindMapHierarchy(graph, theme, appearance);
@@ -1042,7 +1044,7 @@ const MindMapFocusReader = ({ source, focusId, theme, appearance, graphHandle, o
     graph.on("resize", () => fitDiagramContent(graph, readingDocument, container.current, 48));
     graphHandle.current = graph;
     fitDiagramContent(graph, readingDocument, container.current, 48);
-    return () => { graphHandle.current = null; graph.dispose(); };
+    return () => { graphHandle.current = null; detachScroll(); graph.dispose(); };
   }, [source, focusId, theme, appearance, graphHandle]);
   return <div ref={container} className="absolute inset-0 z-10" role="region" aria-label={t("diagram.branchReader")} />;
 };
@@ -1256,7 +1258,7 @@ export const DiagramEditorPane = ({
       async: true,
       background: { color: palette.canvas },
       grid: false,
-      panning: { enabled: true, eventTypes: ["leftMouseDown", "mouseWheel"] },
+      panning: { enabled: true, eventTypes: ["leftMouseDown"] },
       mousewheel: { enabled: true, modifiers: ["ctrl", "meta"], minScale: 0.3, maxScale: 2.5 },
       interacting: !readOnly,
       connecting: {
@@ -1302,6 +1304,7 @@ export const DiagramEditorPane = ({
       },
     }));
     graph.use(new Selection({ enabled: true, multiple: true, rubberband: true, movable: !readOnly, showNodeSelectionBox: true, showEdgeSelectionBox: true }));
+    const detachScroll = attachDiagramScroll(graph.container, graph);
     graph.addNodes(document.nodes.map((node) => {
       const inferredResourceIcon = document.kind === "architecture" && !node.resourceIcon
         ? inferArchitectureResourceIcon(node.label, t)
@@ -1681,7 +1684,7 @@ export const DiagramEditorPane = ({
       openFlowQuickCreateRef.current = () => undefined;
       nodeEditorRef.current = null;
       graphRef.current = null;
-      graph.dispose();
+      detachScroll(); graph.dispose();
     };
   }, [beginNodeEdit, dismissFlowQuickCreate, memo.contentHash, memo.id, readOnly]);
 

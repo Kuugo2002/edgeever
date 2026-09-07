@@ -1,3 +1,4 @@
+import { attachDiagramScroll } from "./diagram-scroll";
 import type { DiagramDocument } from './diagram';
 
 type ReaderGraph = {
@@ -16,6 +17,7 @@ export const attachDiagramReader = (
   graph: ReaderGraph, container: HTMLElement, diagram: DiagramDocument,
   locale: string, dark: boolean,
 ) => {
+  const detachScroll = attachDiagramScroll(container, graph);
   const english = locale === 'en-US';
   const toolbar = document.createElement('div');
   toolbar.className = 'edgeever-diagram-reader-controls';
@@ -69,6 +71,6 @@ export const attachDiagramReader = (
       } else graph.translate(previous.tx + dx, previous.ty + dy);
       update();
     },
-    dispose() { graph.off('scale', update); toolbar.remove(); },
+    dispose() { detachScroll(); graph.off('scale', update); toolbar.remove(); },
   };
 };
