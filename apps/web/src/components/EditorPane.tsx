@@ -12,7 +12,6 @@ import * as m from "motion/react-m";
 import "katex/dist/katex.min.css";
 import {
   ChevronLeft,
-  ChevronRight,
   ChevronDown,
   History,
   RotateCcw,
@@ -446,11 +445,7 @@ type EditorPaneProps = {
   isLoading: boolean;
   contentSearchQuery?: string;
   imageCompressionEnabled: boolean;
-  hasNextMemo: boolean;
-  hasPreviousMemo: boolean;
   onBackToList: () => void;
-  onOpenNextMemo: () => void;
-  onOpenPreviousMemo: () => void;
   onSaved: (memo: MemoDetail) => Promise<void>;
   onDeleted: (memoId: string) => Promise<void>;
   onPermanentDeleted: (memoId: string) => Promise<void>;
@@ -522,11 +517,7 @@ const RichEditorPane = ({
   isLoading,
   contentSearchQuery = "",
   imageCompressionEnabled,
-  hasNextMemo,
-  hasPreviousMemo,
   onBackToList,
-  onOpenNextMemo,
-  onOpenPreviousMemo,
   onSaved,
   onDeleted,
   onPermanentDeleted,
@@ -3824,40 +3815,6 @@ const RichEditorPane = ({
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="hidden items-center gap-1 sm:flex lg:hidden">
-              <button
-                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-30"
-                type="button"
-                title={t("editor.previousMemo")}
-                aria-label={t("editor.previousMemo")}
-                disabled={!hasPreviousMemo}
-                onClick={onOpenPreviousMemo}
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </button>
-              <button
-                className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 disabled:opacity-30"
-                type="button"
-                title={t("editor.nextMemo")}
-                aria-label={t("editor.nextMemo")}
-                disabled={!hasNextMemo}
-                onClick={onOpenNextMemo}
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-            <div className="hidden items-center gap-1 lg:flex">
-              <IconTooltip label={t("editor.previousMemo")}>
-                <Button size="icon" variant="ghost" aria-label={t("editor.previousMemo")} onClick={onOpenPreviousMemo} disabled={!hasPreviousMemo}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </IconTooltip>
-              <IconTooltip label={t("editor.nextMemo")}>
-                <Button size="icon" variant="ghost" aria-label={t("editor.nextMemo")} onClick={onOpenNextMemo} disabled={!hasNextMemo}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </IconTooltip>
-            </div>
             <span className="hidden truncate text-xs text-slate-400 sm:inline">
               {updatedLabel}
             </span>

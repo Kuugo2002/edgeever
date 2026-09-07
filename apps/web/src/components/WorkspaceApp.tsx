@@ -3432,28 +3432,12 @@ export const WorkspaceApp = ({
                           repository={repository}
                           readOnly={memoView === "trash" || selectedMemo.isDeleted}
                           desktopFocusMode={desktopFocusModeActive}
-                          hasNextMemo={Boolean(nextMemoId)}
-                          hasPreviousMemo={Boolean(previousMemoId)}
                           onBackToList={() => {
                             clearPendingCreatedMemo();
                             setActivePane("memos");
                           }}
                           onDeleted={async (memoId) => {
                             deleteMemoMutation.mutate({ memoId, permanent: false });
-                          }}
-                          onOpenNextMemo={() => {
-                            if (nextMemoId) {
-                              clearPendingCreatedMemo();
-                              setCreatedMemoEditId(null);
-                              setSelectedMemoId(nextMemoId);
-                            }
-                          }}
-                          onOpenPreviousMemo={() => {
-                            if (previousMemoId) {
-                              clearPendingCreatedMemo();
-                              setCreatedMemoEditId(null);
-                              setSelectedMemoId(previousMemoId);
-                            }
                           }}
                           onPermanentDeleted={async (memoId) => {
                             setMemoDeleteConfirmation({ kind: "single", memoIds: [memoId], permanent: true });
@@ -3513,26 +3497,10 @@ export const WorkspaceApp = ({
                     }}
                     imageCompressionEnabled={imageCompressionEnabled}
                     selectionActionBar={memoSelectionActionBar}
-                    hasNextMemo={Boolean(nextMemoId)}
-                    hasPreviousMemo={Boolean(previousMemoId)}
                     onBackToList={() => {
                       applyMobileEditorReturnPreview(selectedMemo?.id ?? selectedMemoId);
                       clearPendingCreatedMemo();
                       setActivePane("memos");
-                    }}
-                    onOpenNextMemo={() => {
-                      if (nextMemoId) {
-                        clearPendingCreatedMemo();
-                        setCreatedMemoEditId(null);
-                        setSelectedMemoId(nextMemoId);
-                      }
-                    }}
-                    onOpenPreviousMemo={() => {
-                      if (previousMemoId) {
-                        clearPendingCreatedMemo();
-                        setCreatedMemoEditId(null);
-                        setSelectedMemoId(previousMemoId);
-                      }
                     }}
                     onSaved={async (memo) => {
                       await putLocalMemo(localDataScope, memo);

@@ -29,6 +29,13 @@ describe("shared memo editor header actions", () => {
     expect(diagramSource).not.toContain("<WeChatIcon");
   });
 
+  test("leaves sequential note navigation to the memo list", () => {
+    expect(editorSource).not.toContain("onOpenPreviousMemo");
+    expect(editorSource).not.toContain("onOpenNextMemo");
+    expect(diagramSource).not.toContain("onOpenPreviousMemo");
+    expect(diagramSource).not.toContain("onOpenNextMemo");
+  });
+
   test("applies one shared compact density standard to both editors", () => {
     expect(editorSource).toContain("MEMO_EDITOR_TOP_ROW_CLASS_NAME");
     expect(diagramSource).toContain("MEMO_EDITOR_TOP_ROW_CLASS_NAME");

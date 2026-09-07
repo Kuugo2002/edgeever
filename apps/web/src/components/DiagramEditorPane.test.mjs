@@ -42,8 +42,8 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain('<span className="hidden truncate text-xs text-slate-400 sm:inline">{updatedLabel}</span>');
     expect(source).not.toContain('t("editor.updatedAt", { time: updatedLabel })');
     expect(source).toContain("onToggleDesktopFocusMode");
-    expect(source).toContain("onOpenPreviousMemo");
-    expect(source).toContain("onOpenNextMemo");
+    expect(source).not.toContain("onOpenPreviousMemo");
+    expect(source).not.toContain("onOpenNextMemo");
     expect(source).toContain("<MemoEditorHeaderActions");
     expect(source).toContain("onSearch={openSearch}");
     expect(source).toContain("<EditorNoteSearchBar");

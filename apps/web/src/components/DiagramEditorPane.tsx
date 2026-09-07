@@ -14,7 +14,6 @@ import {
   ChartNoAxesCombined,
   ChevronDown,
   ChevronLeft,
-  ChevronRight,
   Circle,
   CircleAlert,
   Cloud,
@@ -124,12 +123,8 @@ type DiagramEditorPaneProps = {
   repository: EdgeEverRepository;
   readOnly: boolean;
   desktopFocusMode: boolean;
-  hasNextMemo: boolean;
-  hasPreviousMemo: boolean;
   onBackToList: () => void;
   onDeleted: (memoId: string) => Promise<void>;
-  onOpenNextMemo: () => void;
-  onOpenPreviousMemo: () => void;
   onPermanentDeleted: (memoId: string) => Promise<void>;
   onRestored: (memoId: string) => Promise<void>;
   onSaved: (memo: MemoDetail) => Promise<void>;
@@ -1017,12 +1012,8 @@ export const DiagramEditorPane = ({
   repository,
   readOnly,
   desktopFocusMode,
-  hasNextMemo,
-  hasPreviousMemo,
   onBackToList,
   onDeleted,
-  onOpenNextMemo,
-  onOpenPreviousMemo,
   onPermanentDeleted,
   onRestored,
   onSaved,
@@ -2194,24 +2185,6 @@ export const DiagramEditorPane = ({
               </TooltipTrigger>
               <TooltipContent>{t("diagram.back")}</TooltipContent>
             </Tooltip>
-            <div className="hidden items-center gap-1 sm:flex lg:hidden">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="ghost" aria-label={t("editor.previousMemo")} onClick={onOpenPreviousMemo} disabled={!hasPreviousMemo}>
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("editor.previousMemo")}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="ghost" aria-label={t("editor.nextMemo")} onClick={onOpenNextMemo} disabled={!hasNextMemo}>
-                    <ChevronRight className="h-3.5 w-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("editor.nextMemo")}</TooltipContent>
-              </Tooltip>
-            </div>
             <div className="hidden items-center gap-1 lg:flex">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -2221,22 +2194,6 @@ export const DiagramEditorPane = ({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>{t(desktopFocusMode ? "editor.exitFocusMode" : "editor.focusMode")}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="ghost" aria-label={t("editor.previousMemo")} onClick={onOpenPreviousMemo} disabled={!hasPreviousMemo}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("editor.previousMemo")}</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="ghost" aria-label={t("editor.nextMemo")} onClick={onOpenNextMemo} disabled={!hasNextMemo}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("editor.nextMemo")}</TooltipContent>
               </Tooltip>
             </div>
             <span className="hidden truncate text-xs text-slate-400 sm:inline">{updatedLabel}</span>
