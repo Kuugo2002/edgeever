@@ -44,7 +44,7 @@ import {
 } from "@/lib/mobile-editor";
 import { cn } from "@/lib/utils";
 import { isBrowserOffline, isBrowserOnline } from "@/lib/network-status";
-import { createDefaultDiagramDocument, createExcerpt, diagramFallbackMarkdown, docToText, getNotebookDescendantIds, markdownToDoc, parseDiagramDocument, resolveMemoContentDoc, serializeDiagramDocument, type DiagramKind, type Notebook, type AuthUser, type MemoSummary, type MemoDetail, type MemoTemplate as SavedMemoTemplate } from "@edgeever/shared";
+import { createDefaultDiagramDocument, getDiagramSummary, createExcerpt, diagramFallbackMarkdown, docToText, getNotebookDescendantIds, markdownToDoc, parseDiagramDocument, resolveMemoContentDoc, serializeDiagramDocument, type DiagramKind, type Notebook, type AuthUser, type MemoSummary, type MemoDetail, type MemoTemplate as SavedMemoTemplate } from "@edgeever/shared";
 import { toggleMobileMemoSelection } from "@edgeever/shared/mobile-ui";
 import type {
   Pane,
@@ -198,7 +198,7 @@ const memoToSummary = (memo: MemoDetail): MemoSummary => ({
   notebookId: memo.notebookId,
   title: memo.title,
   excerpt: memo.excerpt || createExcerpt(memo.contentText || docToText(resolveMemoContentDoc(memo.contentJson, memo.contentMarkdown))),
-  diagramKind: parseDiagramDocument(memo.contentMarkdown)?.kind ?? null,
+  ...getDiagramSummary(memo.contentMarkdown),
   tags: memo.tags,
   isPinned: memo.isPinned,
   isArchived: memo.isArchived,

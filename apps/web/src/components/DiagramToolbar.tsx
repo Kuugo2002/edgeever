@@ -1,10 +1,12 @@
 import type { PointerEventHandler, ReactNode } from "react";
 import {
   Boxes,
+  BookOpen,
   ChevronDown,
   Download,
   FileCode2,
   FileImage,
+  Scan,
   Redo2,
   Trash2,
   Undo2,
@@ -37,6 +39,10 @@ type DiagramToolbarProps = {
   onRedo: () => void;
   onThemeChange: (theme: DiagramTheme) => void;
   onUndo: () => void;
+  onRead?: () => void;
+  onFit: () => void;
+  onResetZoom: () => void;
+  zoomPercent: number;
   onZoomIn: () => void;
   onZoomOut: () => void;
   readOnly: boolean;
@@ -75,6 +81,10 @@ export const DiagramToolbar = ({
   onRedo,
   onThemeChange,
   onUndo,
+  onRead,
+  onFit,
+  onResetZoom,
+  zoomPercent,
   onZoomIn,
   onZoomOut,
   readOnly,
@@ -101,7 +111,11 @@ export const DiagramToolbar = ({
       )}
       <ToolbarDivider />
       <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.zoomOut")} onClick={onZoomOut}><ZoomOut className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.zoomOut")}</TooltipContent></Tooltip>
+      <Tooltip><TooltipTrigger asChild><Button size="sm" variant="ghost" className="w-16 tabular-nums" aria-label={t("diagram.resetZoom")} onClick={onResetZoom}>{zoomPercent}%</Button></TooltipTrigger><TooltipContent>{t("diagram.resetZoom")}</TooltipContent></Tooltip>
       <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.zoomIn")} onClick={onZoomIn}><ZoomIn className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.zoomIn")}</TooltipContent></Tooltip>
+      <Tooltip><TooltipTrigger asChild><Button size="sm" variant="ghost" aria-label={t("diagram.fit")} onClick={onFit}><Scan className="h-4 w-4" /><span>{t("diagram.fit")}</span></Button></TooltipTrigger><TooltipContent>{t("diagram.fit")}</TooltipContent></Tooltip>
+      {onRead ? <Tooltip><TooltipTrigger asChild><Button size="sm" variant="ghost" onClick={onRead}><BookOpen className="h-4 w-4" />{t("diagram.readFlow")}</Button></TooltipTrigger><TooltipContent>{t("diagram.readFlowHint")}</TooltipContent></Tooltip> : null}
+      <ToolbarDivider />
       <Select value={theme} disabled={readOnly} onValueChange={(value) => onThemeChange(value as DiagramTheme)}>
         <SelectTrigger className="h-8 w-[8.5rem] gap-2" aria-label={t("diagram.theme")}>
           <SelectValue />
