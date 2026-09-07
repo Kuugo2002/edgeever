@@ -1,5 +1,5 @@
 import { diagramEditorSnapshot } from "@/lib/diagram-editor-snapshot";
-import { projectMindMapView } from "@/lib/mind-map-view";
+import { MemoTitleInput } from "@/components/MemoTitleInput";
 import { useCallback, useEffect, useRef, useState, type DragEvent as ReactDragEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { Dom, Export, Graph, History, Keyboard, Selection, type Edge, type Node } from "@antv/x6";
 import * as m from "motion/react-m";
@@ -1006,49 +1006,6 @@ const applyGraphPalette = (
   }
 };
 
-const MindMapFocusReader = ({ source, focusId, theme, appearance, graphHandle, onZoom, onSelect }: {
-  source: DiagramDocument;
-  focusId: string;
-  theme: DiagramTheme;
-  appearance: DiagramAppearance;
-  graphHandle: { current: Graph | null };
-  onZoom: (value: number) => void;
-  onSelect: (id: string, label: string) => void;
-}) => {
-  const container = useRef<HTMLDivElement>(null);
-  const { t } = useTranslation();
-  const callbacks = useRef({ onZoom, onSelect });
-  callbacks.current = { onZoom, onSelect };
-  useEffect(() => {
-    if (!container.current) return;
-    const visible = projectMindMapView(source.nodes, new Set(), focusId).visible;
-    const readingDocument: DiagramDocument = {
-      ...source,
-      nodes: source.nodes.filter((node) => visible.has(node.id)).map((node) => ({
-        ...node, ...diagramNodeSize(node, "mind-map"), ...(node.id === focusId ? { parentId: undefined } : {}),
-      })),
-      edges: source.edges.filter((edge) => visible.has(edge.source) && visible.has(edge.target)),
-    };
-    const layout = computeDiagramLayoutResult(readingDocument);
-    const graph = new Graph({ container: container.current, autoResize: true, async: false, grid: false,
-      background: { color: resolveDiagramPalette(theme, appearance).canvas }, interacting: false,
-      panning: { enabled: true, eventTypes: ["leftMouseDown"] },
-      mousewheel: { enabled: true, modifiers: ["ctrl", "meta"], minScale: 0.1, maxScale: 2.5 },
-    });
-    const detachScroll = attachDiagramScroll(graph.container, graph);
-    graph.addNodes(readingDocument.nodes.map((node) => nodeMetadata({ ...node, ...layout.nodes[node.id] }, theme, "mind-map", appearance)));
-    graph.addEdges(readingDocument.edges.map((edge) => edgeMetadata(edge, "mind-map", theme, appearance)));
-    applyMindMapHierarchy(graph, theme, appearance);
-    graph.on("scale", () => callbacks.current.onZoom(Math.round(graph.scale().sx * 100)));
-    graph.on("node:click", ({ node }) => callbacks.current.onSelect(node.id, node.getData<NodeData>()?.label ?? ""));
-    graph.on("resize", () => fitDiagramContent(graph, readingDocument, container.current, 48));
-    graphHandle.current = graph;
-    fitDiagramContent(graph, readingDocument, container.current, 48);
-    return () => { graphHandle.current = null; detachScroll(); graph.dispose(); };
-  }, [source, focusId, theme, appearance, graphHandle]);
-  return <div ref={container} className="absolute inset-0 z-10" role="region" aria-label={t("diagram.branchReader")} />;
-};
-
 export const DiagramEditorPane = ({
   memo,
   repository,
@@ -1083,12 +1040,7 @@ export const DiagramEditorPane = ({
   const themeRef = useRef<DiagramTheme>(documentTheme);
   const appearanceRef = useRef<DiagramAppearance>(resolvedTheme);
   const savedSnapshotRef = useRef(document ? diagramEditorSnapshot(memo.title ?? "", document) : "");
-  const [mindMapView, setMindMapView] = useState<{ memoId: string; collapsed: Set<string>; focus: string | null; snapshot?: DiagramDocument }>({ memoId: memo.id, collapsed: new Set(), focus: null });
-  const focusGraphRef = useRef<Graph | null>(null);
   const viewOnlyRef = useRef(false);
-  const lastMindMapProjectionRef = useRef<unknown>(null);
-  const activeMindMapView = mindMapView.memoId === memo.id ? mindMapView : null;
-  const mindMapChildren = document?.kind === "mind-map" ? projectMindMapView(document.nodes, new Set(), null).children : new Map<string, string[]>();
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedNodeLabel, setSelectedNodeLabel] = useState("");
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
@@ -1190,10 +1142,6 @@ export const DiagramEditorPane = ({
   useEffect(() => () => {
     if (memoIdCopyTimerRef.current !== null) window.clearTimeout(memoIdCopyTimerRef.current);
   }, []);
-
-  useEffect(() => {
-    setMindMapView({ memoId: memo.id, collapsed: new Set(), focus: null });
-  }, [memo.id, memo.contentHash]);
 
   useEffect(() => {
     memoRef.current = memo;
@@ -1687,38 +1635,6 @@ export const DiagramEditorPane = ({
       detachScroll(); graph.dispose();
     };
   }, [beginNodeEdit, dismissFlowQuickCreate, memo.contentHash, memo.id, readOnly]);
-
-  useEffect(() => {
-    const graph = graphRef.current;
-    if (!graph || document?.kind !== "mind-map") return;
-    const view = mindMapView.memoId === memo.id ? mindMapView : null;
-    if (view?.focus) graph.disableKeyboard(); else if (!readOnly) graph.enableKeyboard();
-    const nodes = graph.getNodes();
-    const projection = projectMindMapView(nodes.map((node) => ({ id: node.id, parentId: node.getData<NodeData>()?.parentId })), view?.collapsed ?? new Set(), view?.focus ?? null);
-    const shouldFit = lastMindMapProjectionRef.current !== mindMapView;
-    lastMindMapProjectionRef.current = mindMapView;
-    const historyEnabled = graph.isHistoryEnabled();
-    viewOnlyRef.current = true;
-    if (historyEnabled) graph.disableHistory();
-    try {
-      for (const cell of graph.getSelectedCells()) {
-        const visible = cell.isNode() ? projection.visible.has(cell.id) : cell.isEdge()
-          && projection.visible.has(cell.getSourceCellId()) && projection.visible.has(cell.getTargetCellId());
-        if (!visible) graph.unselect(cell);
-      }
-      for (const node of nodes) node.setVisible(projection.visible.has(node.id));
-      for (const edge of graph.getEdges()) edge.setVisible(projection.visible.has(edge.getSourceCellId()) && projection.visible.has(edge.getTargetCellId()));
-      applyMindMapHierarchy(graph, themeRef.current, appearanceRef.current);
-      const bounds = graph.getCellsBBox(nodes.filter((node) => projection.visible.has(node.id)));
-      if (bounds && shouldFit) graph.zoomToRect(bounds, { padding: 48, maxScale: 1 });
-    } finally {
-      if (historyEnabled) graph.enableHistory();
-      viewOnlyRef.current = false;
-    }
-    setSelectedNodeId((current) => current && projection.visible.has(current) ? current : null);
-    setSelectedEdgeId((current) => current && graph.getCellById(current)?.isVisible() ? current : null);
-    setHasSelection(graph.getSelectedCells().length > 0);
-  }, [memo.id, memo.contentHash, mindMapView, dirtyVersion]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -2376,15 +2292,12 @@ export const DiagramEditorPane = ({
         </div>
 
         <div className="flex min-h-14 items-center gap-3 px-4 py-2.5 sm:px-7">
-          <input
-            className="min-w-0 flex-1 bg-transparent text-xl font-semibold text-slate-950 outline-none placeholder:text-slate-400 disabled:text-slate-600 sm:text-2xl"
+          <MemoTitleInput
             value={title}
-            disabled={readOnly}
-            maxLength={160}
+            readOnly={readOnly}
             placeholder={kindLabel}
-            aria-label={t("diagram.title")}
-            onChange={(event) => {
-              const nextTitle = event.target.value;
+            ariaLabel={t("diagram.title")}
+            onValueChange={(nextTitle) => {
               titleRef.current = nextTitle;
               setTitle(nextTitle);
               setDirtyVersion((current) => current + 1);
@@ -2406,7 +2319,7 @@ export const DiagramEditorPane = ({
           canRedo={historyState.redo}
           canUndo={historyState.undo}
           hasSelection={hasSelection}
-          leading={!readOnly && !activeMindMapView?.focus ? (
+          leading={!readOnly ? (
             document.kind === "mind-map" ? (
               <DiagramInsertMenu
                 items={[
@@ -2437,26 +2350,26 @@ export const DiagramEditorPane = ({
           onUndo={() => runHistoryAction("undo")}
           zoomPercent={zoomPercent}
           onRead={document.kind === "flowchart" ? () => { if (graphRef.current) readFlowchart(graphRef.current, document, containerRef.current); } : undefined}
-          onFit={() => { const graph = focusGraphRef.current ?? graphRef.current; if (graph) fitDiagramContent(graph, document, containerRef.current); }}
+          onFit={() => { const graph = graphRef.current; if (graph) fitDiagramContent(graph, document, containerRef.current); }}
           onResetZoom={() => {
-            const graph = focusGraphRef.current ?? graphRef.current;
+            const graph = graphRef.current;
             if (!graph) return;
             graph.zoomTo(1);
             const bounds = graph.getCellsBBox(graph.getNodes().filter((node) => node.isVisible()));
             if (bounds) graph.centerPoint(bounds.center.x, bounds.center.y);
           }}
-          onZoomIn={() => (focusGraphRef.current ?? graphRef.current)?.zoom(0.1)}
-          onZoomOut={() => (focusGraphRef.current ?? graphRef.current)?.zoom(-0.1)}
-          readOnly={readOnly || Boolean(activeMindMapView?.focus)}
+          onZoomIn={() => graphRef.current?.zoom(0.1)}
+          onZoomOut={() => graphRef.current?.zoom(-0.1)}
+          readOnly={readOnly}
           selectionEditor={(
             <>
-              {selectedNodeId && !readOnly && !activeMindMapView?.focus && (
+              {selectedNodeId && !readOnly && (
                 <div className="ml-auto flex min-w-[220px] flex-1 items-center gap-2 sm:max-w-sm">
                   <span className="shrink-0 text-xs font-medium text-slate-500">{t("diagram.nodeText")}</span>
                   <Input value={selectedNodeLabel} maxLength={120} onChange={(event) => updateSelectedLabel(event.target.value)} />
                 </div>
               )}
-              {selectedEdgeId && !readOnly && !activeMindMapView?.focus && (
+              {selectedEdgeId && !readOnly && (
                 <div className="ml-auto flex min-w-[220px] flex-1 items-center gap-2 sm:max-w-sm">
                   <span className="shrink-0 text-xs font-medium text-slate-500">{t("diagram.edgeText")}</span>
                   <Input value={selectedEdgeLabel} maxLength={80} onChange={(event) => updateSelectedEdgeLabel(event.target.value)} />
@@ -2466,44 +2379,15 @@ export const DiagramEditorPane = ({
           )}
           theme={theme}
         />
-        {document.kind === "mind-map" ? (
-          <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500" role="toolbar" aria-label={t("diagram.branchView")}>
-            <span>{t("diagram.branchView")}</span>
-            <Button size="sm" variant="ghost" onClick={() => setMindMapView({ memoId: memo.id, focus: null, collapsed: new Set(document.nodes.filter((node) => node.parentId && document.nodes.some((parent) => parent.id === node.parentId && !parent.parentId)).map((node) => node.id)) })}>{t("diagram.branchOverview")}</Button>
-            <Button size="sm" variant="ghost" disabled={Boolean(activeMindMapView?.focus) || !selectedNodeId || !mindMapChildren.has(selectedNodeId)} onClick={() => {
-              if (!selectedNodeId) return;
-              const collapsed = new Set(activeMindMapView?.collapsed);
-              if (collapsed.has(selectedNodeId)) collapsed.delete(selectedNodeId); else collapsed.add(selectedNodeId);
-              setMindMapView({ memoId: memo.id, collapsed, focus: activeMindMapView?.focus ?? null });
-            }}>{selectedNodeId && activeMindMapView?.collapsed.has(selectedNodeId) ? t("diagram.expandBranch") : t("diagram.collapseBranch")}</Button>
-            <Button size="sm" variant="ghost" disabled={!selectedNodeId} onClick={() => {
-              if (selectedNodeId) setMindMapView({ memoId: memo.id, collapsed: new Set(), focus: selectedNodeId, snapshot: graphRef.current ? graphToDocument(graphRef.current, "mind-map", themeRef.current) : document });
-            }}>{t("diagram.focusBranch")}</Button>
-            <Button size="sm" variant="ghost" disabled={!activeMindMapView?.focus && !activeMindMapView?.collapsed.size} onClick={() => setMindMapView({ memoId: memo.id, collapsed: new Set(), focus: null })}>{t("diagram.showFullMap")}</Button>
-            <span className="ml-auto" role="status">{activeMindMapView?.focus ? t("diagram.focusedBranch", { label: document.nodes.find((node) => node.id === activeMindMapView.focus)?.label ?? "" }) : activeMindMapView?.collapsed.size ? t("diagram.collapsedBranches", { count: activeMindMapView.collapsed.size }) : t("diagram.selectBranchHint")}</span>
-          </div>
-        ) : null}
-
         <div className="relative min-h-0 flex-1">
-          {activeMindMapView?.focus && activeMindMapView.snapshot ? <MindMapFocusReader
-            source={activeMindMapView.snapshot} focusId={activeMindMapView.focus} theme={theme} appearance={resolvedTheme}
-            graphHandle={focusGraphRef} onZoom={setZoomPercent}
-            onSelect={(id, label) => {
-              const graph = graphRef.current;
-              const node = graph?.getCellById(id);
-              if (graph && node) { graph.cleanSelection(); graph.select(node); }
-              setSelectedNodeId(id); setSelectedNodeLabel(label); setSelectedEdgeId(null); setHasSelection(Boolean(node));
-            }}
-          /> : null}
           <div
             ref={containerRef}
-            aria-hidden={activeMindMapView?.focus ? true : undefined}
             className={cn("edgeever-diagram-canvas absolute inset-0 touch-none outline-none", pendingArchitectureItem && "cursor-crosshair")}
             data-architecture-placement={pendingArchitectureItem ? "active" : undefined}
             data-diagram-appearance={resolvedTheme}
             data-diagram-kind={document.kind}
             data-diagram-theme={theme}
-            tabIndex={activeMindMapView?.focus ? -1 : 0}
+            tabIndex={0}
             aria-label={t("diagram.canvas", { type: kindLabel })}
             onDragOver={handleArchitectureDragOver}
             onDrop={handleArchitectureDrop}

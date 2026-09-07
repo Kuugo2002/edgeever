@@ -18,7 +18,6 @@ import {
   RotateCcw,
   Trash2,
   Tags,
-  Save,
   ReplaceAll,
   MoreHorizontal,
   Maximize2,
@@ -45,6 +44,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { GitHubRepositoryLink } from "@/components/GitHubRepositoryLink";
 import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
+import { MemoTitleInput } from "@/components/MemoTitleInput";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -4038,25 +4038,6 @@ const RichEditorPane = ({
             {companionDiscoveryHub}
             <ExecutionCenterButton className="h-8 w-8" onClick={onOpenExecutionCenter} />
             <ThemeToggle />
-            {!effectiveReadOnly && (
-              <IconTooltip label={t("editor.save")}>
-                <Button
-                  className={cn(
-                    "hidden h-8 w-8 transition-colors sm:inline-flex",
-                    hasUnsavedChanges
-                      ? "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-300"
-                      : "text-slate-400 hover:bg-slate-100 hover:text-slate-600 focus-visible:ring-2 focus-visible:ring-slate-300"
-                  )}
-                  size="icon"
-                  variant="ghost"
-                  aria-label={t("editor.save")}
-                  onClick={() => saveMutation.mutate()}
-                  disabled={!editor || saveMutation.isPending || !hasUnsavedChanges}
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
-              </IconTooltip>
-            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -4207,15 +4188,14 @@ const RichEditorPane = ({
         </div>
 
         <div className="space-y-1.5 px-4 pb-2.5 pt-2.5 sm:space-y-3 sm:px-7 sm:pb-4 sm:pt-4 lg:space-y-0 lg:pb-0.5 lg:pt-1.5">
-          <input
+          <MemoTitleInput
             value={title}
             readOnly={effectiveReadOnly}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              persistCurrentDraft(event.target.value, tagsText, getMobilePlainTextValue());
+            onValueChange={(nextTitle) => {
+              setTitle(nextTitle);
+              persistCurrentDraft(nextTitle, tagsText, getMobilePlainTextValue());
               markDirty();
             }}
-            className="block w-full rounded-md border-0 bg-transparent text-xl font-bold leading-snug text-slate-950 outline-none transition placeholder:text-slate-300 focus-visible:bg-muted focus-visible:shadow-[inset_3px_0_0_var(--brand-green)] sm:text-2xl lg:text-[26px]"
             placeholder={t("common.untitledMemo")}
           />
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">

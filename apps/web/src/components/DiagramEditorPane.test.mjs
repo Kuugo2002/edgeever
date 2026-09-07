@@ -104,10 +104,15 @@ describe("diagram editor canvas surface", () => {
 
   test("delegates every diagram kind to one shared toolbar shell", () => {
     expect(source).toContain("<DiagramToolbar");
-    expect(source).toContain("leading={!readOnly && !activeMindMapView?.focus ? (");
+    expect(source).toContain("leading={!readOnly ? (");
     expect(toolbarSource).toContain('role="toolbar"');
     expect(toolbarSource).toContain("{leading ? <>{leading}<ToolbarDivider /></> : null}");
     expect(toolbarSource).toContain("{selectionEditor}");
+  });
+
+  test("keeps the mind-map canvas flush with the shared toolbar", () => {
+    expect(source).not.toContain('t("diagram.branchView")');
+    expect(source).not.toContain("MindMapFocusReader");
   });
 
   test("reuses the architecture shape-library trigger across every diagram kind", () => {
