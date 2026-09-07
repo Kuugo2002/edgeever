@@ -17,6 +17,7 @@ import {
 import { useTranslation } from "react-i18next";
 import type { DiagramTheme } from "@edgeever/shared";
 import { Button } from "@/components/ui/button";
+import { MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME } from "@/components/MemoEditorChromeDensity";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { resolveDiagramPalette, type DiagramAppearance } from "@/lib/diagram-theme";
+import { cn } from "@/lib/utils";
 
 type DiagramToolbarProps = {
   appearance: DiagramAppearance;
@@ -93,7 +95,7 @@ export const DiagramToolbar = ({
 }: DiagramToolbarProps) => {
   const { t } = useTranslation();
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-1 border-b border-slate-200 bg-white px-3 py-2" role="toolbar" aria-label={t("diagram.toolbar")}>
+    <div className={cn("flex shrink-0 flex-wrap items-center gap-1 border-b border-slate-200 bg-white", MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME)} role="toolbar" aria-label={t("diagram.toolbar")}>
       {leading ? <>{leading}<ToolbarDivider /></> : null}
       <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.undo")} disabled={!canUndo || readOnly} onClick={onUndo}><Undo2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.undo")}</TooltipContent></Tooltip>
       <Tooltip><TooltipTrigger asChild><Button size="icon" variant="ghost" aria-label={t("diagram.redo")} disabled={!canRedo || readOnly} onClick={onRedo}><Redo2 className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent>{t("diagram.redo")}</TooltipContent></Tooltip>

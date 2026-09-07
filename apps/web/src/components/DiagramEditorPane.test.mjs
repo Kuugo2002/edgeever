@@ -256,6 +256,12 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain('graph.startBatch("quick-create")');
   });
 
+  test("keeps the desktop header compact without shrinking mobile controls", () => {
+    expect(source).toContain("MEMO_EDITOR_TOP_ROW_CLASS_NAME");
+    expect(source).toContain("MEMO_EDITOR_TITLE_ROW_CLASS_NAME");
+    expect(toolbarSource).toContain("MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME");
+  });
+
   test("repaints the graph when the application appearance changes", () => {
     expect(source).toContain("const { resolvedTheme } = useAppearanceTheme();");
     expect(source).toContain("applyGraphPalette(graph, themeRef.current, document.kind, resolvedTheme);");

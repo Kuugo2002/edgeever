@@ -22,6 +22,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME } from "@/components/MemoEditorChromeDensity";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -288,7 +289,8 @@ export const EditorToolbar = ({
         <div
           ref={controlsRef}
           className={cn(
-            "flex min-w-0 max-w-full flex-wrap items-center gap-1 px-3 py-2 sm:px-5",
+            "flex min-w-0 max-w-full flex-wrap items-center gap-1",
+            MEMO_EDITOR_TOOLBAR_PADDING_CLASS_NAME,
             hasOverflow && "pr-14 sm:pr-16",
             !expanded && "max-h-12 overflow-hidden"
           )}

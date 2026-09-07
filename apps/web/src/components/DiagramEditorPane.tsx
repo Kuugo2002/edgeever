@@ -90,6 +90,10 @@ import { ShareMemoDialog } from "@/components/dialogs/ShareMemoDialog";
 import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
 import { DiagramToolbar, DiagramToolbarAddTrigger } from "@/components/DiagramToolbar";
 import { MemoEditorHeaderActions } from "@/components/MemoEditorHeaderActions";
+import {
+  MEMO_EDITOR_TITLE_ROW_CLASS_NAME,
+  MEMO_EDITOR_TOP_ROW_CLASS_NAME,
+} from "@/components/MemoEditorChromeDensity";
 import { EditorNoteSearchBar } from "@/components/editor/EditorNoteSearchBar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -2180,7 +2184,7 @@ export const DiagramEditorPane = ({
     <TooltipProvider>
       <div className="flex h-full min-h-0 flex-col bg-white">
       <header className="shrink-0 border-b border-slate-200 bg-white">
-        <div className="flex min-h-12 items-center justify-between gap-2 border-b border-slate-100 px-3 py-2 sm:px-5">
+        <div className={MEMO_EDITOR_TOP_ROW_CLASS_NAME}>
           <div className="flex min-w-0 items-center gap-2 text-sm">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -2340,7 +2344,7 @@ export const DiagramEditorPane = ({
           </div>
         </div>
 
-        <div className="flex min-h-14 items-center gap-3 px-4 py-2.5 sm:px-7">
+        <div className={MEMO_EDITOR_TITLE_ROW_CLASS_NAME}>
           <MemoTitleInput
             value={title}
             readOnly={readOnly}

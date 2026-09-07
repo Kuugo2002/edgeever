@@ -41,6 +41,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
 import { MemoEditorHeaderActions } from "@/components/MemoEditorHeaderActions";
+import {
+  MEMO_EDITOR_TEXT_TITLE_REGION_CLASS_NAME,
+  MEMO_EDITOR_TOP_ROW_CLASS_NAME,
+} from "@/components/MemoEditorChromeDensity";
 import { MemoTitleInput } from "@/components/MemoTitleInput";
 import { Input } from "@/components/ui/input";
 import {
@@ -3807,7 +3811,7 @@ const RichEditorPane = ({
         />
       )}
       <header className="shrink-0 border-b border-slate-200 bg-white">
-        <div className="flex min-h-12 items-center justify-between gap-2 border-b border-slate-100 px-3 py-2 sm:px-5">
+        <div className={MEMO_EDITOR_TOP_ROW_CLASS_NAME}>
           <div className="flex min-w-0 items-center gap-2 text-sm">
             <Button
               className="lg:hidden"
@@ -4146,18 +4150,20 @@ const RichEditorPane = ({
           </div>
         </div>
 
-        <div className="space-y-1.5 px-4 pb-2.5 pt-2.5 sm:space-y-3 sm:px-7 sm:pb-4 sm:pt-4 lg:space-y-0 lg:pb-0.5 lg:pt-1.5">
-          <MemoTitleInput
-            value={title}
-            readOnly={effectiveReadOnly}
-            onValueChange={(nextTitle) => {
-              setTitle(nextTitle);
-              persistCurrentDraft(nextTitle, tagsText, getMobilePlainTextValue());
-              markDirty();
-            }}
-            placeholder={t("common.untitledMemo")}
-          />
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <div className={MEMO_EDITOR_TEXT_TITLE_REGION_CLASS_NAME}>
+          <div className="min-w-0 min-[1600px]:flex-1">
+            <MemoTitleInput
+              value={title}
+              readOnly={effectiveReadOnly}
+              onValueChange={(nextTitle) => {
+                setTitle(nextTitle);
+                persistCurrentDraft(nextTitle, tagsText, getMobilePlainTextValue());
+                markDirty();
+              }}
+              placeholder={t("common.untitledMemo")}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-[1600px]:shrink-0 min-[1600px]:flex-nowrap">
             <button
               className="flex h-7 min-w-0 max-w-full items-center gap-1 rounded-md border border-transparent bg-transparent px-1.5 text-xs font-medium text-slate-600 outline-none transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900 focus-visible:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-500/20 disabled:opacity-50 sm:hidden"
               type="button"
