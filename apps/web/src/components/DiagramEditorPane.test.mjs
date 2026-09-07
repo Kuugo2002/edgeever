@@ -44,7 +44,9 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain("onToggleDesktopFocusMode");
     expect(source).toContain("onOpenPreviousMemo");
     expect(source).toContain("onOpenNextMemo");
-    expect(source).toContain('aria-label={t("editor.moreAria")}');
+    expect(source).toContain("<MemoEditorHeaderActions");
+    expect(source).toContain("onSearch={openSearch}");
+    expect(source).toContain("<EditorNoteSearchBar");
     expect(source).toContain('t("editor.versionHistory")');
     expect(source).toContain('"sharing.afterSync" : "sharing.action"');
     expect(source).toContain('t("templates.saveAsTemplate")');
@@ -258,6 +260,6 @@ describe("diagram editor canvas surface", () => {
     expect(source).toContain("const { resolvedTheme } = useAppearanceTheme();");
     expect(source).toContain("applyGraphPalette(graph, themeRef.current, document.kind, resolvedTheme);");
     expect(source).toContain("data-diagram-appearance={resolvedTheme}");
-    expect(source).toContain("<ThemeToggle />");
+    expect(source).toContain("<MemoEditorHeaderActions");
   });
 });

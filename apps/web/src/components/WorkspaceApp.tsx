@@ -3093,6 +3093,15 @@ export const WorkspaceApp = ({
       : isStandaloneRuntime
         ? t("workspace.pullToRefresh.pullNotes")
         : t("workspace.pullToRefresh.pullPage");
+  const editorCompanionDiscoveryHub = authRequired && Boolean(user) && !demoMode ? (
+    <Suspense fallback={null}>
+      <CompanionDiscoveryHub key={localDataScope} scope={localDataScope} onOpenNote={handleOpenPluginNote} onOpenSettings={handleOpenSettings}
+        onNotesChanged={async () => {
+          const result = await refreshWorkspaceFromServer("manual");
+          if ("skipped" in result && result.skipped) throw new Error("Workspace refresh was skipped.");
+        }} />
+    </Suspense>
+  ) : null;
 
   return (
     <WorkspaceMotionProvider>
@@ -3463,19 +3472,13 @@ export const WorkspaceApp = ({
                           }}
                           onSaveAsTemplate={handleSaveAsTemplate}
                           onToggleDesktopFocusMode={toggleDesktopFocusMode}
+                          onOpenExecutionCenter={handleOpenExecutionCenter}
+                          companionDiscoveryHub={editorCompanionDiscoveryHub}
                         />
                       ) : (
                       <EditorPane
                       onOpenExecutionCenter={handleOpenExecutionCenter}
-                      companionDiscoveryHub={authRequired && Boolean(user) && !demoMode ? (
-                        <Suspense fallback={null}>
-                          <CompanionDiscoveryHub key={localDataScope} scope={localDataScope} onOpenNote={handleOpenPluginNote} onOpenSettings={handleOpenSettings}
-                            onNotesChanged={async () => {
-                              const result = await refreshWorkspaceFromServer("manual");
-                              if ("skipped" in result && result.skipped) throw new Error("Workspace refresh was skipped.");
-                            }} />
-                        </Suspense>
-                      ) : null}
+                      companionDiscoveryHub={editorCompanionDiscoveryHub}
                       memo={selectedMemo}
                       repository={repository}
                       pluginHost={pluginHost}

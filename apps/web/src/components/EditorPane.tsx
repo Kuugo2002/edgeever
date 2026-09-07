@@ -19,19 +19,16 @@ import {
   Trash2,
   Tags,
   ReplaceAll,
-  MoreHorizontal,
   Maximize2,
   Minimize2,
   Paperclip,
   Pencil,
   Sparkles,
-  Search,
   Type,
   X,
   Check,
   CircleAlert,
   LoaderCircle,
-  Info,
   FileDown,
   FileCode2,
   Printer,
@@ -42,16 +39,14 @@ import {
   LockOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GitHubRepositoryLink } from "@/components/GitHubRepositoryLink";
 import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
+import { MemoEditorHeaderActions } from "@/components/MemoEditorHeaderActions";
 import { MemoTitleInput } from "@/components/MemoTitleInput";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -96,8 +91,6 @@ import {
   type NoteLinkSuggestionLabels,
 } from "./editor/NoteLinkSuggestion";
 import { WeChatIcon } from "./WeChatIcon";
-import { ThemeToggle } from "./ThemeToggle";
-import { ExecutionCenterButton } from "./execution/ExecutionCenterButton";
 import { useEditorTheme, useMarkdownTheme } from "./ThemeProvider";
 import type { MarkdownSourceEditorRef } from "./editor/MarkdownSourceEditor";
 
@@ -169,8 +162,6 @@ import {
 } from "@/lib/app-helpers";
 import { copyEditorToWeChat, copyMarkdownToWeChat } from "@/lib/wechat-copy";
 import { ThemeBlock } from "./ThemeBlock";
-import { SystemInfoDialog } from "./SystemInfoDialog";
-import { useDeployedUpdateNotice } from "@/hooks/useDeployedUpdateNotice";
 import { downloadMarkdownFile } from "@/lib/note-markdown-export";
 import { NOTE_HTML_FULL_STYLES } from "@/lib/note-html-export-assets";
 import { downloadNoteHtmlFile, getHtmlImageEmbedNoticeKind } from "@/lib/note-html-export";
@@ -565,6 +556,7 @@ const RichEditorPane = ({
   const resourceInsertionLimit = useMemo(createFileBatchQueue, []);
   const isSelectionMode = Boolean(selectionActionBar);
   const [title, setTitle] = useState("");
+  const [systemInfoOpen, setSystemInfoOpen] = useState(false);
   const [tagsText, setTagsText] = useState("");
   const {
     dirtyVersion,
@@ -598,8 +590,6 @@ const RichEditorPane = ({
   const aiBubbleMenu = useAiBubbleMenu(aiAssistantOpen);
   const [aiSelection, setAiSelection] = useState<AiSelectionContext | null>(null);
   const [aiInsertionTarget, setAiInsertionTarget] = useState<AiInsertionTarget | null>(null);
-  const [systemInfoOpen, setSystemInfoOpen] = useState(false);
-  const { unseen: deployedUpdateUnseen } = useDeployedUpdateNotice();
   const [mobileNotebookSheetOpen, setMobileNotebookSheetOpen] = useState(false);
   const [notebookUpdatePending, setNotebookUpdatePending] = useState(false);
   const [noteSearchOpen, setNoteSearchOpen] = useState(false);
@@ -3984,74 +3974,57 @@ const RichEditorPane = ({
                 <Type className="h-4 w-4" />
               </Button>
             )}
-            <IconTooltip label={t("editor.searchCurrentMemo")}>
-              <Button className="hidden h-8 w-8 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-slate-300 sm:inline-flex" size="icon" variant="ghost" aria-label={t("editor.searchCurrentMemo")} onClick={() => openNoteSearch()}>
-                <Search className="h-5 w-5" strokeWidth={2.25} />
-              </Button>
-            </IconTooltip>
-            {!effectiveReadOnly && (
-              <IconTooltip label={`${t("aiAssistant.open")} (${formatShortcutBinding(shortcutSettings.openAiAssistant)})`}>
-                <Button className="hidden h-8 w-8 text-emerald-600 transition-colors hover:bg-emerald-50 hover:text-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-300 sm:inline-flex" size="icon" variant="ghost" aria-label={t("aiAssistant.open")} onClick={openAiAssistant}>
-                  <Sparkles className="h-5 w-5" strokeWidth={2.25} />
-                </Button>
-              </IconTooltip>
-            )}
-            <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    className={cn(
-                      "hidden h-8 w-8 text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-slate-300 min-[1600px]:inline-flex",
-                      wechatCopyState === "copying" && "bg-slate-100 text-slate-700",
-                      wechatCopyState === "copied" && "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100",
-                      wechatCopyState === "error" && "bg-rose-100 text-rose-700 ring-1 ring-rose-200 hover:bg-rose-100"
-                    )}
-                    size="icon"
-                    variant="ghost"
-                    aria-label={t("editor.copyToWeChat")}
-                    onClick={() => void handleCopyToWeChat()}
-                    disabled={!editor || useMobilePlainTextEditor || wechatCopyState === "copying"}
-                  >
-                    {wechatCopyState === "copying" ? (
-                      <LoaderCircle className="h-4 w-4 animate-spin" />
-                    ) : wechatCopyState === "copied" ? (
-                      <Check className="h-5 w-5" strokeWidth={2.75} />
-                    ) : wechatCopyState === "error" ? (
-                      <CircleAlert className="h-5 w-5" strokeWidth={2.25} />
-                    ) : (
-                      <WeChatIcon className="h-5 w-5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  {t(wechatCopyState === "copying" ? "editor.copyingToWeChat" : wechatCopyState === "copied" ? "editor.copiedToWeChat" : wechatCopyState === "error" ? "editor.copyToWeChatFailed" : "editor.copyToWeChat")}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <GitHubRepositoryLink className="hidden h-8 w-8 justify-center rounded-md text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 min-[1600px]:inline-flex" iconClassName="h-5 w-5" />
-            <IconTooltip label={t("systemInfo.title")}>
-              <Button className="relative hidden h-8 w-8 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-emerald-500/70 min-[1600px]:inline-flex" size="icon" variant="ghost" aria-label={t("systemInfo.title")} onClick={() => setSystemInfoOpen(true)}>
-                <Info className="h-5 w-5" strokeWidth={2.25} />
-                {deployedUpdateUnseen ? <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-white" /> : null}
-              </Button>
-            </IconTooltip>
-            {companionDiscoveryHub}
-            <ExecutionCenterButton className="h-8 w-8" onClick={onOpenExecutionCenter} />
-            <ThemeToggle />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  className={cn(!mobileEditingActive && !readOnly && "hidden sm:inline-flex")}
-                  size="icon"
-                  variant="ghost"
-                  title={t("editor.more")}
-                  aria-label={t("editor.moreAria")}
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44 bg-white border border-slate-200 rounded-md py-1 shadow-md">
-                {!effectiveReadOnly && (
+            <MemoEditorHeaderActions
+              companionDiscoveryHub={companionDiscoveryHub}
+              moreButtonClassName={cn(!mobileEditingActive && !readOnly && "hidden sm:inline-flex")}
+              moreMenuClassName="w-44 rounded-md"
+              onOpenExecutionCenter={onOpenExecutionCenter}
+              onSearch={() => openNoteSearch()}
+              onSystemInfoOpenChange={setSystemInfoOpen}
+              textNoteActions={(
+                <>
+                  {!effectiveReadOnly && (
+                    <IconTooltip label={`${t("aiAssistant.open")} (${formatShortcutBinding(shortcutSettings.openAiAssistant)})`}>
+                      <Button className="hidden h-8 w-8 text-emerald-600 transition-colors hover:bg-emerald-50 hover:text-emerald-800 focus-visible:ring-2 focus-visible:ring-emerald-300 sm:inline-flex" size="icon" variant="ghost" aria-label={t("aiAssistant.open")} onClick={openAiAssistant}>
+                        <Sparkles className="h-5 w-5" strokeWidth={2.25} />
+                      </Button>
+                    </IconTooltip>
+                  )}
+                  <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          className={cn(
+                            "hidden h-8 w-8 text-slate-500 transition-all hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-slate-300 min-[1600px]:inline-flex",
+                            wechatCopyState === "copying" && "bg-slate-100 text-slate-700",
+                            wechatCopyState === "copied" && "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100",
+                            wechatCopyState === "error" && "bg-rose-100 text-rose-700 ring-1 ring-rose-200 hover:bg-rose-100"
+                          )}
+                          size="icon"
+                          variant="ghost"
+                          aria-label={t("editor.copyToWeChat")}
+                          onClick={() => void handleCopyToWeChat()}
+                          disabled={!editor || useMobilePlainTextEditor || wechatCopyState === "copying"}
+                        >
+                          {wechatCopyState === "copying" ? (
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                          ) : wechatCopyState === "copied" ? (
+                            <Check className="h-5 w-5" strokeWidth={2.75} />
+                          ) : wechatCopyState === "error" ? (
+                            <CircleAlert className="h-5 w-5" strokeWidth={2.25} />
+                          ) : (
+                            <WeChatIcon className="h-5 w-5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        {t(wechatCopyState === "copying" ? "editor.copyingToWeChat" : wechatCopyState === "copied" ? "editor.copiedToWeChat" : wechatCopyState === "error" ? "editor.copyToWeChatFailed" : "editor.copyToWeChat")}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </>
+              )}
+              textNoteMenuItems={!effectiveReadOnly ? (
                   <DropdownMenuItem
                     className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-emerald-700 hover:bg-emerald-50 cursor-pointer outline-none"
                     onClick={openAiAssistant}
@@ -4059,14 +4032,9 @@ const RichEditorPane = ({
                     <Sparkles className="h-4 w-4 text-emerald-600" />
                     {t("aiAssistant.title")}
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem
-                  className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
-                  onClick={() => openNoteSearch()}
-                >
-                  <Search className="h-4 w-4 text-slate-500" />
-                  {t("editor.searchCurrentMemo")}
-                </DropdownMenuItem>
+                ) : null}
+              moreMenuItems={(
+                <>
                 <DropdownMenuItem
                   className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none"
                   disabled={isLocalMemoId(memo.id)}
@@ -4091,16 +4059,6 @@ const RichEditorPane = ({
                 >
                   <History className="h-4 w-4 text-slate-500" />
                   {t("editor.versionHistory")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="flex h-9 w-full items-center gap-2 px-3 text-left text-sm text-slate-700 hover:bg-slate-50 cursor-pointer outline-none min-[1600px]:hidden"
-                  onClick={() => setSystemInfoOpen(true)}
-                >
-                  <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
-                    <Info className="h-4 w-4 text-slate-500" />
-                    {deployedUpdateUnseen ? <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-1 ring-white" /> : null}
-                  </span>
-                  {t("systemInfo.title")}
                 </DropdownMenuItem>
                 {!effectiveReadOnly && (
                   <DropdownMenuItem
@@ -4182,8 +4140,9 @@ const RichEditorPane = ({
                     </DropdownMenuItem>
                   </>
                 )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </>
+              )}
+            />
           </div>
         </div>
 
@@ -4613,8 +4572,6 @@ const RichEditorPane = ({
           }}
         />
       )}
-
-      <SystemInfoDialog open={systemInfoOpen} onOpenChange={setSystemInfoOpen} />
 
       <AiAssistantDialog
         open={aiAssistantOpen}

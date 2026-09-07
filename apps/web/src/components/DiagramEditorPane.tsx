@@ -1,6 +1,6 @@
 import { diagramEditorSnapshot } from "@/lib/diagram-editor-snapshot";
 import { MemoTitleInput } from "@/components/MemoTitleInput";
-import { useCallback, useEffect, useRef, useState, type DragEvent as ReactDragEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent as ReactDragEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { Dom, Export, Graph, History, Keyboard, Selection, type Edge, type Node } from "@antv/x6";
 import * as m from "motion/react-m";
 import {
@@ -46,7 +46,6 @@ import {
   LoaderCircle,
   Maximize2,
   Minimize2,
-  MoreHorizontal,
   MonitorSmartphone,
   Network,
   Pencil,
@@ -90,10 +89,11 @@ import { RevisionHistoryDialog } from "@/components/dialogs/RevisionHistoryDialo
 import { ShareMemoDialog } from "@/components/dialogs/ShareMemoDialog";
 import { ClipboardCopyNotice } from "@/components/ClipboardCopyNotice";
 import { DiagramToolbar, DiagramToolbarAddTrigger } from "@/components/DiagramToolbar";
+import { MemoEditorHeaderActions } from "@/components/MemoEditorHeaderActions";
+import { EditorNoteSearchBar } from "@/components/editor/EditorNoteSearchBar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAppearanceTheme } from "@/components/ThemeProvider";
 import { api } from "@/lib/api";
 import { EDITOR_LOCAL_SAVE_DELAY_MS } from "@/lib/app-helpers";
@@ -131,6 +131,8 @@ type DiagramEditorPaneProps = {
   onSaved: (memo: MemoDetail) => Promise<void>;
   onSaveAsTemplate: (memo: MemoDetail, name: string) => Promise<void>;
   onToggleDesktopFocusMode: () => void;
+  onOpenExecutionCenter: () => void;
+  companionDiscoveryHub?: ReactNode;
 };
 
 type NodeData = { label: string; shape: DiagramNodeShape; parentId?: string; resourceIcon?: ArchitectureResourceIcon };
@@ -1022,6 +1024,8 @@ export const DiagramEditorPane = ({
   onSaved,
   onSaveAsTemplate,
   onToggleDesktopFocusMode,
+  onOpenExecutionCenter,
+  companionDiscoveryHub,
 }: DiagramEditorPaneProps) => {
   const { t } = useTranslation();
   const { resolvedTheme } = useAppearanceTheme();
@@ -1057,6 +1061,10 @@ export const DiagramEditorPane = ({
   const [memoIdCopyNotice, setMemoIdCopyNotice] = useState<"copied" | "error" | null>(null);
   const memoIdCopyTimerRef = useRef<number | null>(null);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchIndex, setSearchIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [zoomPercent, setZoomPercent] = useState(100);
   const [historyState, setHistoryState] = useState({ undo: false, redo: false });
   const [nodeEditor, setNodeEditor] = useState<NodeEditorState | null>(null);
@@ -2107,6 +2115,47 @@ export const DiagramEditorPane = ({
     }, name.trim());
   };
 
+  const searchMatches = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase();
+    if (!searchOpen || !query) return [];
+    return (graphRef.current?.getNodes() ?? []).filter((node) =>
+      (node.getData<NodeData>()?.label ?? "").toLocaleLowerCase().includes(query),
+    );
+  }, [dirtyVersion, memo.id, searchOpen, searchQuery]);
+
+  const selectSearchMatch = useCallback((index: number) => {
+    const graph = graphRef.current;
+    const node = searchMatches[index];
+    if (!graph || !node) return;
+    graph.cleanSelection();
+    graph.select(node);
+    graph.centerCell(node);
+    setSelectedNodeId(node.id);
+    setSelectedNodeLabel(node.getData<NodeData>()?.label ?? "");
+  }, [searchMatches]);
+
+  const moveSearchMatch = useCallback((direction: -1 | 1) => {
+    if (searchMatches.length === 0) return;
+    setSearchIndex((current) => {
+      const next = (current + direction + searchMatches.length) % searchMatches.length;
+      selectSearchMatch(next);
+      return next;
+    });
+  }, [searchMatches.length, selectSearchMatch]);
+
+  const openSearch = useCallback(() => {
+    setSearchOpen(true);
+    window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    });
+  }, []);
+
+  useEffect(() => {
+    setSearchIndex(0);
+    if (searchMatches[0]) selectSearchMatch(0);
+  }, [searchMatches, selectSearchMatch]);
+
   if (!document) return null;
   const kindLabel = document.kind === "mind-map" ? t("diagram.mindMap") : document.kind === "architecture" ? t("diagram.architecture") : t("diagram.flowchart");
   const updatedLabel = formatDateTime(memo.updatedAt);
@@ -2231,14 +2280,13 @@ export const DiagramEditorPane = ({
                 {t("diagram.retrySave")}
               </Button>
             )}
-            <ThemeToggle />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="ghost" aria-label={t("editor.moreAria")}>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 border border-slate-200 bg-white py-1 shadow-md">
+            <MemoEditorHeaderActions
+              companionDiscoveryHub={companionDiscoveryHub}
+              moreMenuClassName="w-48"
+              onOpenExecutionCenter={onOpenExecutionCenter}
+              onSearch={openSearch}
+              moreMenuItems={(
+                <>
                 <DropdownMenuItem disabled={isLocalMemoId(memo.id)} onClick={() => void handleCopyMemoId()}>
                   <Copy className="h-4 w-4 text-slate-500" />
                   {t(isLocalMemoId(memo.id) ? "editor.copyNoteIdAfterSync" : "editor.copyNoteId")}
@@ -2286,8 +2334,9 @@ export const DiagramEditorPane = ({
                     {t("editor.deleteMemo")}
                   </DropdownMenuItem>
                 )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </>
+              )}
+            />
           </div>
         </div>
 
@@ -2311,6 +2360,22 @@ export const DiagramEditorPane = ({
             }}
           />
         </div>
+        {searchOpen ? (
+          <EditorNoteSearchBar
+            inputRef={searchInputRef}
+            query={searchQuery}
+            replacement=""
+            replaceOpen={false}
+            readOnly
+            matchCount={searchMatches.length}
+            matchLabel={searchQuery.trim() ? `${searchMatches.length > 0 ? searchIndex + 1 : 0}/${searchMatches.length}` : ""}
+            onQueryChange={setSearchQuery}
+            onReplacementChange={() => undefined}
+            onMoveMatch={moveSearchMatch}
+            onReplaceAll={() => undefined}
+            onClose={() => setSearchOpen(false)}
+          />
+        ) : null}
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">
