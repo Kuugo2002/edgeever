@@ -24,6 +24,19 @@ describe("appearance preference", () => {
   });
 });
 
+describe("paper editor themes", () => {
+  test("offers letter, guide, blueprint, and journal as editor themes", () => {
+    const preferenceCard = readFileSync(new URL("./PreferenceCard.tsx", import.meta.url), "utf8");
+
+    expect(preferenceCard).not.toContain('t("settings.publishLayoutTitle")');
+    expect(preferenceCard).toContain('value="letter"');
+    expect(preferenceCard).toContain('t("settings.editorThemes.letter")');
+    expect(preferenceCard).toContain('t("settings.editorThemes.guide")');
+    expect(preferenceCard).toContain('t("settings.editorThemes.blueprint")');
+    expect(preferenceCard).toContain('t("settings.editorThemes.journal")');
+  });
+});
+
 describe("custom editor theme portability", () => {
   test("offers import and export while keeping contrast as a warning", () => {
     const dialog = readFileSync(new URL("./CustomEditorThemeDialog.tsx", import.meta.url), "utf8");

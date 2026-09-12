@@ -592,7 +592,7 @@ export const zhCN = {
     markdownThemeTitle: "Markdown 源码主题",
     markdownThemeDescription: "跟随应用外观，或为 Markdown 源码编辑模式选择固定的代码高亮配色。",
     editorThemeTitle: "编辑器主题",
-    editorThemeDescription: "选择正文编辑区的排版风格，偏好会保存在当前浏览器中。",
+    editorThemeDescription: "选择正文编辑区的排版风格，偏好会保存在当前浏览器中。复制到公众号时使用同一套风格。",
     editorContentAlignmentTitle: "笔记正文布局",
     editorContentAlignmentDescription: "选择桌面端所有笔记的正文显示方式，偏好会保存在当前浏览器中。",
     editorContentAlignments: {
@@ -601,6 +601,10 @@ export const zhCN = {
     },
     editorThemes: {
       default: "系统默认",
+      letter: "暖笺",
+      guide: "教程",
+      blueprint: "蓝图",
+      journal: "刊物",
       "minimal-emerald": "minimal品牌绿",
       "outline-emerald": "Outline 品牌绿",
       "wechat-green": "微信经典绿",

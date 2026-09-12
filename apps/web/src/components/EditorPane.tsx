@@ -91,7 +91,7 @@ import {
   type NoteLinkSuggestionLabels,
 } from "./editor/NoteLinkSuggestion";
 import { WeChatIcon } from "./WeChatIcon";
-import { useEditorTheme, useMarkdownTheme } from "./ThemeProvider";
+import { isNamedEditorTheme, useEditorTheme, useMarkdownTheme } from "./ThemeProvider";
 import type { MarkdownSourceEditorRef } from "./editor/MarkdownSourceEditor";
 
 const MarkdownSourceEditor = lazy(() =>
@@ -161,6 +161,7 @@ import {
   type ShortcutSettings,
 } from "@/lib/app-helpers";
 import { copyEditorToWeChat, copyMarkdownToWeChat } from "@/lib/wechat-copy";
+import { isPaperEditorTheme, publishEditorCssVars, resolvePaperEditorTheme } from "@/lib/publish-layout";
 import { ThemeBlock } from "./ThemeBlock";
 import { downloadMarkdownFile } from "@/lib/note-markdown-export";
 import { NOTE_HTML_FULL_STYLES } from "@/lib/note-html-export-assets";
@@ -4196,27 +4197,17 @@ const RichEditorPane = ({
 
       <div
         ref={setEditorScrollContainerRef}
-        data-editor-theme={
-          editorTheme === "default" ||
-          editorTheme === "minimal-emerald" ||
-          editorTheme === "outline-emerald" ||
-          editorTheme === "wechat-green" ||
-          editorTheme === "modern-mint" ||
-          editorTheme === "marxico"
-            ? editorTheme
-            : "custom"
-        }
+        data-editor-theme={isNamedEditorTheme(editorTheme) ? editorTheme : "custom"}
         style={{
-          "--editor-body-font-size": `${MEMO_CONTENT_STYLE.body.fontSize}px`,
-          "--editor-body-line-height": String(MEMO_CONTENT_STYLE.body.lineHeight / MEMO_CONTENT_STYLE.body.fontSize),
-          "--editor-paragraph-spacing": `${MEMO_CONTENT_STYLE.body.paragraphSpacing}px`,
+          ...(isPaperEditorTheme(editorTheme)
+            ? publishEditorCssVars(editorTheme, resolvePaperEditorTheme(editorTheme)?.palette ?? "emerald")
+            : {
+                "--editor-body-font-size": `${MEMO_CONTENT_STYLE.body.fontSize}px`,
+                "--editor-body-line-height": String(MEMO_CONTENT_STYLE.body.lineHeight / MEMO_CONTENT_STYLE.body.fontSize),
+                "--editor-paragraph-spacing": `${MEMO_CONTENT_STYLE.body.paragraphSpacing}px`,
+              }),
           "--memo-content-divider-spacing": `${MEMO_CONTENT_STYLE.divider.marginVertical}px`,
-          ...(editorTheme !== "default" &&
-          editorTheme !== "minimal-emerald" &&
-          editorTheme !== "outline-emerald" &&
-          editorTheme !== "wechat-green" &&
-          editorTheme !== "modern-mint" &&
-          editorTheme !== "marxico"
+          ...(!isNamedEditorTheme(editorTheme)
             ? {
                 "--editor-theme-light-bg": customEditorTheme.light.background,
                 "--editor-theme-light-text": customEditorTheme.light.text,
@@ -4247,13 +4238,7 @@ const RichEditorPane = ({
               : "overflow-y-auto"
         )}
       >
-        {editorTheme !== "default" &&
-          editorTheme !== "minimal-emerald" &&
-          editorTheme !== "outline-emerald" &&
-          editorTheme !== "wechat-green" &&
-          editorTheme !== "modern-mint" &&
-          editorTheme !== "marxico" &&
-          customEditorTheme.customCss && (
+        {!isNamedEditorTheme(editorTheme) && customEditorTheme.customCss && (
             <style
               data-theme-custom-css
               data-original-css={customEditorTheme.customCss}

@@ -592,7 +592,7 @@ export const enUS = {
     markdownThemeTitle: "Markdown source theme",
     markdownThemeDescription: "Follow the app appearance or choose a fixed syntax highlighting theme for Markdown source editing.",
     editorThemeTitle: "Editor theme",
-    editorThemeDescription: "Choose a writing style for the note editor. Saved in this browser.",
+    editorThemeDescription: "Choose a writing style for the note editor. Saved in this browser. Copy to WeChat uses the same style.",
     editorContentAlignmentTitle: "Note content layout",
     editorContentAlignmentDescription: "Choose how note content is displayed across all notes on desktop. Saved in this browser.",
     editorContentAlignments: {
@@ -601,6 +601,10 @@ export const enUS = {
     },
     editorThemes: {
       default: "System default",
+      letter: "Letter",
+      guide: "Guide",
+      blueprint: "Blueprint",
+      journal: "Journal",
       "minimal-emerald": "Minimal Emerald",
       "outline-emerald": "Outline Emerald",
       "wechat-green": "WeChat Classic Green",
