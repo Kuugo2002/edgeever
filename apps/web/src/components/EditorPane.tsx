@@ -2,7 +2,6 @@ import { useRef, useState, useEffect, useCallback, useMemo, lazy, Suspense, type
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import { BubbleMenu } from "@tiptap/react/menus";
-import type { Mark } from "@tiptap/pm/model";
 import StarterKit from "@tiptap/starter-kit";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -205,11 +204,12 @@ import {
   getRichTextAiSelectionReplacement,
   normalizeAiSelectionReplacement,
 } from "@/lib/ai-selection-replacement";
-import { getAttachmentFilenameFromLabel, getAttachmentResourceId } from "@/lib/attachment-links";
+import { getAttachmentResourceId } from "@/lib/attachment-links";
 import {
   getAttachmentHoverTarget,
   getAttachmentLinkFromEventTarget,
   isInsideAttachmentHoverRegion,
+  resolveAttachmentMenuFilename,
 } from "./editor/attachment-resource-menu";
 import {
   IMAGE_MENU_HIDE_EVENT,
@@ -250,6 +250,7 @@ import {
   type ResourceDialogState,
   type ResourceMenuTarget,
 } from "./editor/useEditorResourceActions";
+import { removeAttachmentAt, renameAttachmentAt } from "./editor/attachment-editor-range";
 
 const SUPPORTED_PASTE_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/gif", "image/webp", "image/avif"]);
 const MOBILE_EDITOR_QUERY = "(max-width: 639px)";
@@ -314,27 +315,6 @@ const getNoteLinkHintPosition = (link: HTMLAnchorElement): NoteLinkHintPosition 
     top: placement === "above" ? rect.top - 8 : rect.bottom + 8,
     placement,
   };
-};
-
-const findAttachmentLinkRange = (
-  editor: Editor,
-  href: string
-): { from: number; to: number; marks: readonly Mark[] } | null => {
-  let from: number | null = null;
-  let to: number | null = null;
-  let marks: readonly Mark[] = [];
-
-  editor.state.doc.descendants((node, pos) => {
-    if (!node.isText || !node.text) return;
-    const linkMark = node.marks.find((mark) => mark.type.name === "link" && mark.attrs.href === href);
-    if (!linkMark) return;
-    from = from === null ? pos : Math.min(from, pos);
-    to = to === null ? pos + node.nodeSize : Math.max(to, pos + node.nodeSize);
-    marks = node.marks;
-  });
-
-  if (from === null || to === null) return null;
-  return { from: from as number, to: to as number, marks };
 };
 
 type MobilePlainTextElement = HTMLTextAreaElement | HTMLDivElement;
@@ -1617,7 +1597,7 @@ const RichEditorPane = ({
       kind: "attachment",
       element: hover.toolbar ?? undefined,
       url: href,
-      filename: getAttachmentFilenameFromLabel(hover.link.textContent || "") || getAttachmentResourceId(href) || "attachment",
+      filename: resolveAttachmentMenuFilename(hover, href),
       resourceId: getAttachmentResourceId(href),
       position: hover.toolbar ? { left: 0, top: 0, placement: "above" } : getNoteLinkHintPosition(hover.link),
     });
@@ -3173,38 +3153,13 @@ const RichEditorPane = ({
   const replaceAttachmentLabel = useCallback((target: AttachmentMenuTarget, filename: string) => {
     const activeEditor = editorRef.current;
     if (!isEditorReady(activeEditor)) return;
-    const range = findAttachmentLinkRange(activeEditor, target.url);
-    if (!range) return;
-    activeEditor.view.dispatch(
-      activeEditor.state.tr.replaceWith(
-        range.from,
-        range.to,
-        activeEditor.schema.text(t("editor.attachmentLabel", { filename }), [...range.marks])
-      )
-    );
+    renameAttachmentAt(activeEditor, target, filename, t("editor.attachmentLabel", { filename }));
   }, [t]);
 
   const removeAttachmentLink = useCallback((target: AttachmentMenuTarget) => {
     const activeEditor = editorRef.current;
     if (!isEditorReady(activeEditor)) return;
-    const range = findAttachmentLinkRange(activeEditor, target.url);
-    if (!range) return;
-
-    const resolved = activeEditor.state.doc.resolve(range.from);
-    let deleteFrom = range.from;
-    let deleteTo = range.to;
-    for (let depth = resolved.depth; depth > 0; depth -= 1) {
-      const node = resolved.node(depth);
-      if (node.type.name !== "paragraph") continue;
-      const nodeFrom = resolved.before(depth);
-      if (range.from === nodeFrom + 1 && range.to === nodeFrom + node.nodeSize - 1) {
-        deleteFrom = nodeFrom;
-        deleteTo = nodeFrom + node.nodeSize;
-      }
-      break;
-    }
-
-    activeEditor.view.dispatch(activeEditor.state.tr.delete(deleteFrom, deleteTo));
+    removeAttachmentAt(activeEditor, target);
   }, []);
 
   const getResourceActionFailure = useCallback((target: ResourceMenuTarget) =>
