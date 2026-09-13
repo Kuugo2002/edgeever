@@ -426,7 +426,7 @@ html[data-edgeever-extension-theme] kbd {
 }
 
 .edgeever-workspace-grid--sidebar-collapsed {
-  --notebook-sidebar-width: 5rem;
+  --notebook-sidebar-width: 3.5rem;
 }
 
 .edgeever-workspace-shell {

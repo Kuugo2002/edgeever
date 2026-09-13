@@ -71,7 +71,7 @@ describe("NotebookPane sidebar collapse", () => {
     expect(workspace).toContain("collapsed={desktopNotebookSidebarCollapsed}");
     expect(css).toContain(".edgeever-workspace-grid--sidebar-collapsed");
     expect(css).toContain("var(--notebook-sidebar-width)");
-    expect(css).toContain("--notebook-sidebar-width: 5rem;");
+    expect(css).toContain("--notebook-sidebar-width: 3.5rem;");
   });
 });
 

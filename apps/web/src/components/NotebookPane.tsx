@@ -830,18 +830,18 @@ export const NotebookPane = ({
 
       {collapsed && onToggleCollapsed ? (
         <TooltipProvider delayDuration={0} skipDelayDuration={0}>
-          <div className="flex min-h-0 flex-1 flex-col items-center px-2 pt-4" data-notebook-sidebar-rail>
-            <div className="flex shrink-0 items-center rounded-[1.35rem] bg-card shadow-[0_4px_14px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/80">
+          <div className="flex min-h-0 flex-1 flex-col items-center px-1.5 pt-4" data-notebook-sidebar-rail>
+            <div className="flex shrink-0 flex-col items-center gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_4px_10px_rgb(var(--brand-green-rgb)/0.28)] transition-transform duration-150 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_3px_8px_rgb(var(--brand-green-rgb)/0.24)] transition-transform duration-150 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={t("notebookPane.newMemo")}
                     onClick={() => onCreateMemo()}
                     disabled={!canCreateMemo || isCreatingMemo}
                   >
-                    <Plus className="h-5 w-5" aria-hidden="true" />
+                    <Plus className="h-4 w-4" aria-hidden="true" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="right">{t("notebookPane.newMemo")}</TooltipContent>
@@ -852,7 +852,7 @@ export const NotebookPane = ({
                     <DropdownMenuTrigger asChild>
                       <button
                         type="button"
-                        className="flex h-9 w-7 items-center justify-center rounded-r-[1.35rem] text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-800 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 disabled:cursor-not-allowed disabled:opacity-50"
                         aria-label={t("diagram.createType")}
                         disabled={!canCreateMemo || isCreatingMemo}
                       >
@@ -868,7 +868,7 @@ export const NotebookPane = ({
               </DropdownMenu>
             </div>
 
-            <nav className="mt-4 flex min-h-0 flex-1 flex-col items-center gap-1" aria-label={t("companion.primaryNavigation")}>
+            <nav className="mt-3 flex min-h-0 flex-1 flex-col items-center gap-1" aria-label={t("companion.primaryNavigation")}>
               <SidebarRailButton
                 active={!companionActive && view === "notebook" && selectedNotebookId === null}
                 icon={<LayoutList className="h-4 w-4" />}
