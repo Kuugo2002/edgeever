@@ -71,12 +71,12 @@ describe("markdown theme contracts", () => {
     expect(toolbar).toContain("namedEditorThemes");
   });
 
-  test("the rich-text toolbar can toggle a live phone preview", () => {
+  test("phone preview is toggled from the note header instead of the format toolbar", () => {
     const toolbar = readFileSync(new URL("../components/EditorToolbar.tsx", import.meta.url), "utf8");
     const editorPane = readFileSync(new URL("../components/EditorPane.tsx", import.meta.url), "utf8");
-    expect(toolbar).toContain("onPhonePreviewChange");
-    expect(toolbar).toContain('t("editor.showPhonePreview")');
-    expect(toolbar).not.toContain("{t(\"editor.phonePreview\")}");
+    expect(toolbar).not.toContain("onPhonePreviewChange");
+    expect(editorPane).toContain("PhonePreviewGlyph");
+    expect(editorPane).toContain("handlePhonePreviewChange");
     expect(editorPane).toContain("EditorPhonePreview");
     expect(editorPane).toContain("phonePreviewOpen");
     expect(editorPane).toContain("readEditorPhonePreviewPreference");
@@ -84,7 +84,9 @@ describe("markdown theme contracts", () => {
     expect(preview).toContain("edgeever-phone-device");
     expect(preview).toContain("edgeever-phone-device__island");
     expect(preview).toContain("edgeever-phone-device__lens");
+    expect(preview).toContain("edgeever-phone-device__top");
     expect(preview).toContain("edgeever-phone-device__home");
+    expect(preview).not.toContain("edgeever-phone-device__status");
     expect(preview).toContain("buildPhonePreviewHtml");
     expect(preview).toContain("embedMermaidForPreview");
     expect(preview).toContain("phonePreviewFollow");

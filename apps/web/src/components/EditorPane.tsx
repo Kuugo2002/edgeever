@@ -164,7 +164,7 @@ import {
 import { copyEditorToWeChat, copyMarkdownToWeChat } from "@/lib/wechat-copy";
 import { isPaperEditorTheme, publishEditorCssVars, resolvePaperEditorTheme } from "@/lib/publish-layout";
 import { ThemeBlock } from "./ThemeBlock";
-import { EditorPhonePreview } from "./EditorPhonePreview";
+import { EditorPhonePreview, PhonePreviewGlyph } from "./EditorPhonePreview";
 import { downloadMarkdownFile } from "@/lib/note-markdown-export";
 import { NOTE_HTML_FULL_STYLES } from "@/lib/note-html-export-assets";
 import { downloadNoteHtmlFile, getHtmlImageEmbedNoticeKind } from "@/lib/note-html-export";
@@ -3908,6 +3908,30 @@ const RichEditorPane = ({
                       </Button>
                     </IconTooltip>
                   )}
+                  {!isMobileViewport && !useMobilePlainTextEditor && !useMarkdownSourceEditor && (
+                    <TooltipProvider delayDuration={0} skipDelayDuration={0}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            className={cn(
+                              "hidden h-8 w-8 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-slate-300 xl:inline-flex",
+                              phonePreviewOpen && "bg-emerald-50 text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900",
+                            )}
+                            size="icon"
+                            variant="ghost"
+                            aria-label={phonePreviewOpen ? t("editor.hidePhonePreview") : t("editor.showPhonePreview")}
+                            aria-pressed={phonePreviewOpen || undefined}
+                            onClick={() => handlePhonePreviewChange(!phonePreviewOpen)}
+                          >
+                            <PhonePreviewGlyph className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          {phonePreviewOpen ? t("editor.hidePhonePreview") : t("editor.showPhonePreview")}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                   <TooltipProvider delayDuration={0} skipDelayDuration={0}>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -4144,8 +4168,6 @@ const RichEditorPane = ({
             onPickExternalLink={openExternalLinkDialog}
             externalLinkActive={externalLinkActive}
             onPickNoteLink={() => setNoteLinkPickerOpen(true)}
-            phonePreview={phonePreviewOpen}
-            onPhonePreviewChange={handlePhonePreviewChange}
           />
         )}
         <EditorSaveRecoveryBanner
