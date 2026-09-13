@@ -1791,6 +1791,7 @@ export const zhCN = {
     showPhonePreview: "显示手机预览",
     hidePhonePreview: "隐藏手机预览",
     phonePreviewEmpty: "开始写作后，这里会显示手机阅读效果。",
+    phonePreviewFollow: "滚动跟随",
     copyingToWeChat: "正在准备富文本内容",
     copiedToWeChat: "已复制",
     copyToWeChatFailed: "复制失败",

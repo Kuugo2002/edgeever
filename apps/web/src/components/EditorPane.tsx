@@ -4338,7 +4338,11 @@ const RichEditorPane = ({
             )}
           </div>
           {!isMobileViewport && !useMobilePlainTextEditor && !useMarkdownSourceEditor && phonePreviewOpen && (
-            <EditorPhonePreview editor={editor} title={getEditableMemoTitle(memo?.title)} />
+            <EditorPhonePreview
+              editor={editor}
+              title={getEditableMemoTitle(memo?.title)}
+              scrollContainer={editorScrollContainer}
+            />
           )}
           {!isMobileViewport && !useMobilePlainTextEditor && !useMarkdownSourceEditor && !phonePreviewOpen && (
             <EditorOutline

@@ -136,6 +136,7 @@ export const EDITOR_OUTLINE_COLLAPSED_STORAGE_KEY = "edgeever.editorOutlineColla
 export const EDITOR_CONTENT_ALIGNMENT_STORAGE_KEY = "edgeever.editorContentAlignment";
 export const EDITOR_TOOLBAR_EXPANDED_STORAGE_KEY = "edgeever.editorToolbarExpanded";
 export const EDITOR_PHONE_PREVIEW_STORAGE_KEY = "edgeever.editor.phonePreviewOpen";
+export const EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY = "edgeever.editor.phonePreviewFollow";
 export const MEMO_LIST_DENSITY_STORAGE_KEY = "edgeever.memoListDensity";
 export const MEMO_LIST_WIDTH_STORAGE_KEY = "edgeever.memoListWidth";
 export const NOTEBOOK_SORT_STORAGE_KEY = "edgeever.notebookSort";
@@ -434,6 +435,22 @@ export const readEditorPhonePreviewPreference = () => {
 export const writeEditorPhonePreviewPreference = (enabled: boolean) => {
   try {
     window.localStorage.setItem(EDITOR_PHONE_PREVIEW_STORAGE_KEY, enabled ? "true" : "false");
+  } catch {
+    // Local storage can be unavailable in private or restricted browser contexts.
+  }
+};
+
+export const readEditorPhonePreviewFollowPreference = () => {
+  try {
+    return window.localStorage.getItem(EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY) !== "false";
+  } catch {
+    return true;
+  }
+};
+
+export const writeEditorPhonePreviewFollowPreference = (enabled: boolean) => {
+  try {
+    window.localStorage.setItem(EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY, enabled ? "true" : "false");
   } catch {
     // Local storage can be unavailable in private or restricted browser contexts.
   }

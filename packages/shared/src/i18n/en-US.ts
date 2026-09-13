@@ -1793,6 +1793,7 @@ export const enUS = {
     showPhonePreview: "Show phone preview",
     hidePhonePreview: "Hide phone preview",
     phonePreviewEmpty: "Start writing to see how this note reads on a phone.",
+    phonePreviewFollow: "Follow scroll",
     copyingToWeChat: "Preparing rich text",
     copiedToWeChat: "Copied",
     copyToWeChatFailed: "Copy failed",

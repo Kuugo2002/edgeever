@@ -8,6 +8,7 @@ import {
   EDITOR_CONTENT_ALIGNMENT_STORAGE_KEY,
   EDITOR_TOOLBAR_EXPANDED_STORAGE_KEY,
   EDITOR_PHONE_PREVIEW_STORAGE_KEY,
+  EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY,
   NOTEBOOK_SORT_STORAGE_KEY,
   SHORTCUT_SETTINGS_STORAGE_KEY,
   getSearchShortcutScope,
@@ -21,6 +22,7 @@ import {
   readEditorOutlineCollapsedPreference,
   readEditorToolbarExpandedPreference,
   readEditorPhonePreviewPreference,
+  readEditorPhonePreviewFollowPreference,
   readShortcutSettingsPreference,
   writeEditorContentAlignmentPreference,
   writeNotebookSortPreference,
@@ -30,6 +32,7 @@ import {
   writeEditorOutlineCollapsedPreference,
   writeEditorToolbarExpandedPreference,
   writeEditorPhonePreviewPreference,
+  writeEditorPhonePreviewFollowPreference,
   resolveSelectionMoveTargetNotebookId,
   getMemoIdsNeedingMove,
 } from "./app-helpers.ts";
@@ -188,6 +191,27 @@ describe("editor phone preview preference", () => {
 
     writeEditorPhonePreviewPreference(false);
     expect(values.get(EDITOR_PHONE_PREVIEW_STORAGE_KEY)).toBe("false");
+  });
+
+  test("defaults phone preview scroll following to on", () => {
+    const values = installLocalStorage();
+    expect(readEditorPhonePreviewFollowPreference()).toBe(true);
+
+    values.set(EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY, "false");
+    expect(readEditorPhonePreviewFollowPreference()).toBe(false);
+
+    values.set(EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY, "true");
+    expect(readEditorPhonePreviewFollowPreference()).toBe(true);
+  });
+
+  test("persists phone preview scroll following", () => {
+    const values = installLocalStorage();
+
+    writeEditorPhonePreviewFollowPreference(false);
+    expect(values.get(EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY)).toBe("false");
+
+    writeEditorPhonePreviewFollowPreference(true);
+    expect(values.get(EDITOR_PHONE_PREVIEW_FOLLOW_STORAGE_KEY)).toBe("true");
   });
 });
 

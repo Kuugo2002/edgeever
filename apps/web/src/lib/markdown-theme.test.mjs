@@ -86,6 +86,10 @@ describe("markdown theme contracts", () => {
     expect(preview).toContain("edgeever-phone-device__lens");
     expect(preview).toContain("edgeever-phone-device__home");
     expect(preview).toContain("buildPhonePreviewHtml");
+    expect(preview).toContain("embedMermaidForPreview");
+    expect(preview).toContain("phonePreviewFollow");
+    expect(preview).toContain("scrollContainer");
     expect(preview).not.toContain("edgeever-phone-device__wifi");
+    expect(editorPane).toContain("scrollContainer={editorScrollContainer}");
   });
 });
