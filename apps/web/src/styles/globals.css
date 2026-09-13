@@ -421,6 +421,14 @@ html[data-edgeever-extension-theme] kbd {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.edgeever-workspace-grid {
+  --notebook-sidebar-width: clamp(180px, 17vw, 260px);
+}
+
+.edgeever-workspace-grid--sidebar-collapsed {
+  --notebook-sidebar-width: 5rem;
+}
+
 .edgeever-workspace-shell {
   background: var(--workspace-canvas);
 }
@@ -484,13 +492,13 @@ html[data-edgeever-extension-theme] .edgeever-memo-divider {
 @media (min-width: 1024px) {
   .edgeever-workspace-grid--editor {
     grid-template-columns:
-      clamp(180px, 17vw, 260px)
+      var(--notebook-sidebar-width)
       clamp(240px, 23vw, var(--memo-list-width))
       minmax(0, 1fr);
   }
 
   .edgeever-workspace-grid--single-right {
-    grid-template-columns: clamp(180px, 17vw, 260px) minmax(0, 1fr);
+    grid-template-columns: var(--notebook-sidebar-width) minmax(0, 1fr);
   }
 
   .edgeever-workspace-selection-desktop {
@@ -673,6 +681,188 @@ textarea {
   min-height: 0;
   padding: 8px 20px 40px;
   color: #0f172a;
+}
+
+.edgeever-phone-stage {
+  width: 430px;
+  min-height: 760px;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 12px 12px 0;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--workspace-surface, #eef3f0) 76%, white);
+}
+
+.edgeever-phone-device {
+  position: relative;
+  width: 390px;
+  height: 720px;
+  border-radius: 48px;
+  background:
+    linear-gradient(165deg, #6a6a6e 0%, #3e3e42 12%, #1f1f22 38%, #2c2c30 72%, #121214 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 0 -10px 18px rgba(255, 255, 255, 0.05),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.55),
+    0 0 0 1px #0c0c0e,
+    0 22px 48px rgba(15, 23, 42, 0.18),
+    0 48px 90px rgba(15, 23, 42, 0.16);
+}
+
+.edgeever-phone-device__silent,
+.edgeever-phone-device__vol-up,
+.edgeever-phone-device__vol-down,
+.edgeever-phone-device__power {
+  position: absolute;
+  background: linear-gradient(180deg, #4a4a4e, #1c1c1f);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 0 0.5px rgba(0, 0, 0, 0.45);
+}
+
+.edgeever-phone-device__silent {
+  left: -3px;
+  top: 96px;
+  width: 3px;
+  height: 18px;
+  border-radius: 1px 0 0 1px;
+}
+
+.edgeever-phone-device__vol-up,
+.edgeever-phone-device__vol-down {
+  left: -3px;
+  width: 3px;
+  height: 32px;
+  border-radius: 1px 0 0 1px;
+}
+
+.edgeever-phone-device__vol-up { top: 132px; }
+.edgeever-phone-device__vol-down { top: 172px; }
+
+.edgeever-phone-device__power {
+  right: -3px;
+  top: 156px;
+  width: 3px;
+  height: 62px;
+  border-radius: 0 1px 1px 0;
+}
+
+.edgeever-phone-device__screen {
+  position: absolute;
+  inset: 8px;
+  overflow: hidden;
+  border-radius: 38px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+}
+
+:root.dark .edgeever-phone-device__screen {
+  background: #111;
+}
+
+.edgeever-phone-device__island {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  z-index: 4;
+  display: flex;
+  width: 102px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transform: translateX(-50%);
+  border-radius: 20px;
+  background: #050505;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.edgeever-phone-device__lens {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 32%, #5b6c88, #182033 58%, #050505 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.edgeever-phone-device__lens--wide {
+  width: 11px;
+  height: 11px;
+}
+
+.edgeever-phone-device__status {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  height: 48px;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 22px 7px;
+  color: #111;
+  pointer-events: none;
+}
+
+:root.dark .edgeever-phone-device__status {
+  color: #f4f4f5;
+}
+
+.edgeever-phone-device__time {
+  font-family: -apple-system, "SF Pro Text", "PingFang SC", sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.edgeever-phone-device__status-icons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.edgeever-phone-device__home {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  z-index: 4;
+  width: 108px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 99px;
+  background: rgba(15, 15, 16, 0.92);
+}
+
+.edgeever-phone-preview {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 52px 16px 26px;
+  background: var(--publish-bg, #fff);
+  -webkit-overflow-scrolling: touch;
+}
+
+.edgeever-phone-preview .ProseMirror,
+.edgeever-phone-article {
+  min-height: 0;
+  padding: 0 0 20px;
+}
+
+.edgeever-phone-preview h1 {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  line-height: 1.4 !important;
+  letter-spacing: normal !important;
+  margin: 0 0 12px !important;
+}
+
+.edgeever-phone-preview .edgeever-theme-block__toolbar,
+.edgeever-phone-preview .edgeever-theme-block__delete {
+  display: none;
 }
 
 .edgeever-public-share .ProseMirror [data-edgeever-theme-block] {

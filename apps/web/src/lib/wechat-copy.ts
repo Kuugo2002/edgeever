@@ -91,7 +91,7 @@ const applyInlineStyles = (
 ) => {
   const paperTheme = resolvePaperEditorTheme(editorTheme);
   if (paperTheme) {
-    applyPublishLayout(root, paperTheme.layout, paperTheme.palette);
+    applyPublishLayout(root, paperTheme.layout, paperTheme.palette, "phone");
   } else {
     applyLegacyWeChatStyles(root, customColors);
   }

@@ -19,8 +19,19 @@ import {
 } from "./publish-layout.ts";
 
 describe("publish layout catalog", () => {
-  test("keeps four original skeletons and eight palettes", () => {
-    expect(PUBLISH_LAYOUT_IDS).toEqual(["letter", "guide", "blueprint", "journal"]);
+  test("keeps ten paper editor themes and eight palettes", () => {
+    expect(PUBLISH_LAYOUT_IDS).toEqual([
+      "letter",
+      "guide",
+      "blueprint",
+      "journal",
+      "stance",
+      "stub",
+      "brief",
+      "outline",
+      "zen",
+      "grove",
+    ]);
     expect(PUBLISH_PALETTE_IDS).toHaveLength(8);
     expect(DEFAULT_PUBLISH_LAYOUT).toBe("letter");
     expect(DEFAULT_PUBLISH_PALETTE).toBe("emerald");
@@ -44,12 +55,26 @@ describe("publish layout catalog", () => {
     expect(formatChapterIndex(0)).toBe("01");
     expect(planHeadingDecoration("h2", "letter", 0)).toEqual({ kind: "chapter", chapterLabel: "01" });
     expect(planHeadingDecoration("h2", "blueprint", 1)).toEqual({ kind: "chapter", chapterLabel: "02" });
+    expect(planHeadingDecoration("h2", "stub", 0)).toEqual({ kind: "chapter", chapterLabel: "01" });
     expect(planHeadingDecoration("h2", "guide", 0)).toEqual({ kind: "none" });
     expect(planHeadingDecoration("h1", "letter", 0)).toEqual({ kind: "title" });
   });
 });
 
 describe("publish layout CSS", () => {
+  test("typesets phone output for a 375-wide reading column", () => {
+    const phone = buildPublishStyles("letter", PUBLISH_PALETTES.emerald, "phone");
+    const desktop = buildPublishStyles("letter", PUBLISH_PALETTES.emerald, "desktop");
+
+    expect(phone.p).toContain("font-size: 15px");
+    expect(phone.p).toContain("line-height: 1.9");
+    expect(phone.p).toContain("margin: 0 0 16px");
+    expect(phone.h1).toContain("font-size: 24px");
+    expect(phone.h2).toContain("font-size: 20px");
+    expect(desktop.p).toContain("font-size: 15px");
+    expect(desktop.p).toContain("line-height: 1.9");
+  });
+
   test("uses a looser reading rhythm than the note editor contract", () => {
     const letter = buildPublishStyles("letter", PUBLISH_PALETTES.emerald);
     const guide = buildPublishStyles("guide", PUBLISH_PALETTES.emerald);
@@ -79,6 +104,7 @@ describe("copy pipeline wiring", () => {
 
     expect(source).toContain("resolvePaperEditorTheme");
     expect(source).toContain("applyPublishLayout");
+    expect(source).toContain('"phone"');
     expect(source).toContain("MEMO_CONTENT_STYLE");
     expect(preferenceCard).not.toContain('t("settings.publishLayoutTitle")');
     expect(preferenceCard).toContain('t("settings.editorThemes.letter")');
@@ -94,9 +120,20 @@ describe("copy pipeline wiring", () => {
     expect(vars["--editor-body-line-height"]).toBe("1.9");
     expect(vars["--publish-accent"]).toBe("#C49A3C");
     expect(editorPane).toContain("isPaperEditorTheme(editorTheme)");
+    expect(editorPane).toContain('data-paper-theme={isPaperEditorTheme(editorTheme) ? "true" : undefined}');
     expect(editorPane).toContain("publishEditorCssVars");
+    expect(editorPane).toContain('data-publish-surface={isMobileViewport ? "phone" : "desktop"}');
     expect(css).toContain("counter-increment: publish-h2");
+    expect(css).toContain("[data-paper-theme]");
     expect(css).toContain('[data-editor-theme="letter"]');
+    expect(css).toContain('[data-editor-theme="stance"]');
+    expect(css).toContain('[data-editor-theme="grove"]');
     expect(css).not.toMatch(/\.ProseMirror p\s*\{[^}]*line-height\s*:/);
+  });
+
+  test("phone preview markup applies the paper layout instead of raw editor chrome", () => {
+    const source = readFileSync(new URL("./publish-layout.ts", import.meta.url), "utf8");
+    expect(source).toContain("export const buildPhonePreviewHtml");
+    expect(source).toContain('applyPublishLayout(root, paper.layout, paper.palette, "phone")');
   });
 });

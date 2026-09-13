@@ -35,7 +35,12 @@ import {
 import { CODE_BLOCK_LANGUAGES, getCodeBlockLanguageValue } from "@/lib/code-block";
 import { EditorTableMenu } from "@/components/EditorTableMenu";
 import { wrapIndentedParagraphInList } from "@/lib/editor-shortcuts";
-import { MARKDOWN_THEME_PREFERENCES, useMarkdownTheme } from "@/components/ThemeProvider";
+import {
+  EDITOR_THEME_NAMES,
+  MARKDOWN_THEME_PREFERENCES,
+  useEditorTheme,
+  useMarkdownTheme,
+} from "@/components/ThemeProvider";
 
 const EditorToolbarButton = ({
   active = false,
@@ -147,6 +152,8 @@ export const EditorToolbar = ({
   onPickExternalLink,
   onPickNoteLink,
   externalLinkActive = false,
+  phonePreview = false,
+  onPhonePreviewChange,
 }: {
   editor: Editor | null;
   readOnly: boolean;
@@ -158,9 +165,13 @@ export const EditorToolbar = ({
   onPickExternalLink?: () => void;
   onPickNoteLink?: () => void;
   externalLinkActive?: boolean;
+  phonePreview?: boolean;
+  onPhonePreviewChange?: (open: boolean) => void;
 }) => {
   const { t } = useTranslation();
   const { markdownThemePreference, setMarkdownTheme } = useMarkdownTheme();
+  const { editorTheme, setEditorTheme, customEditorThemes } = useEditorTheme();
+  const namedEditorThemes = EDITOR_THEME_NAMES.filter((theme) => theme !== "custom");
   const controlsRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(readEditorToolbarExpandedPreference);
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -388,6 +399,46 @@ export const EditorToolbar = ({
             </Select>
           ) : (
             <>
+          <Select
+            value={editorTheme}
+            onValueChange={(value) => setEditorTheme(value)}
+          >
+            <SelectTrigger
+              aria-label={t("editorToolbar.editorTheme")}
+              className="h-8 w-[6.5rem] shrink-0 whitespace-nowrap border-slate-200 bg-card text-xs text-slate-800 [&>span]:truncate [&>span]:whitespace-nowrap"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="min-w-[10rem] bg-card border border-slate-200 rounded-md py-1 shadow-md">
+              {namedEditorThemes.map((theme) => (
+                <SelectItem key={theme} value={theme}>
+                  {t(`settings.editorThemes.${theme}`)}
+                </SelectItem>
+              ))}
+              {customEditorThemes.map((theme) => (
+                <SelectItem key={theme.id} value={theme.id}>
+                  {theme.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {onPhonePreviewChange ? (
+            <span className="hidden xl:inline-flex">
+              <EditorToolbarButton
+                title={phonePreview ? t("editor.hidePhonePreview") : t("editor.showPhonePreview")}
+                active={phonePreview}
+                onClick={() => onPhonePreviewChange(!phonePreview)}
+              >
+                <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" aria-hidden="true">
+                  <rect x="3.6" y="1.1" width="8.8" height="13.8" rx="2" stroke="currentColor" strokeWidth="1.4" />
+                  <rect x="5.15" y="3.35" width="5.7" height="7.15" rx="0.55" fill="currentColor" opacity="0.2" />
+                  <rect x="6.35" y="2.15" width="3.3" height="0.85" rx="0.42" fill="currentColor" />
+                  <rect x="6.7" y="12.55" width="2.6" height="0.7" rx="0.35" fill="currentColor" />
+                </svg>
+              </EditorToolbarButton>
+            </span>
+          ) : null}
+          <MemoEditorToolbarDivider className="hidden sm:block" />
           <Select
             value={blockValue}
             disabled={disabled}

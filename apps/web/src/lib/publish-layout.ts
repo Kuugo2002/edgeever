@@ -1,4 +1,15 @@
-export const PAPER_EDITOR_THEME_IDS = ["letter", "guide", "blueprint", "journal"] as const;
+export const PAPER_EDITOR_THEME_IDS = [
+  "letter",
+  "guide",
+  "blueprint",
+  "journal",
+  "stance",
+  "stub",
+  "brief",
+  "outline",
+  "zen",
+  "grove",
+] as const;
 export type PublishLayoutId = (typeof PAPER_EDITOR_THEME_IDS)[number];
 export const PUBLISH_LAYOUT_IDS = PAPER_EDITOR_THEME_IDS;
 
@@ -22,6 +33,12 @@ export const PAPER_EDITOR_THEME_PALETTES = {
   guide: "emerald",
   blueprint: "navy",
   journal: "slate",
+  stance: "clay",
+  stub: "dawn",
+  brief: "forest",
+  outline: "ink",
+  zen: "slate",
+  grove: "forest",
 } as const satisfies Record<PublishLayoutId, PublishPaletteId>;
 
 export const isPaperEditorTheme = (value: string | null | undefined): value is PublishLayoutId =>
@@ -237,11 +254,13 @@ export const planHeadingDecoration = (
 ): { kind: PublishHeadingKind; chapterLabel?: string } => {
   if (tag === "h1") return { kind: "title" };
   if (tag === "h3") return { kind: "small" };
-  if (tag === "h2" && (layout === "letter" || layout === "blueprint")) {
+  if (tag === "h2" && (layout === "letter" || layout === "blueprint" || layout === "stub" || layout === "outline")) {
     return { kind: "chapter", chapterLabel: formatChapterIndex(chapterIndex) };
   }
   return { kind: "none" };
 };
+
+export type PublishSurface = "desktop" | "phone";
 
 export type PublishRhythm = {
   fontSize: string;
@@ -250,18 +269,45 @@ export type PublishRhythm = {
   headingAlign: "left" | "center";
 };
 
+export const PHONE_ARTICLE_RHYTHM = {
+  fontSize: "15px",
+  lineHeight: "1.9",
+  paragraphSpacing: "16px",
+  h1Size: "24px",
+  h2Size: "20px",
+  h3Size: "15px",
+} as const;
+
+const resolvePublishRhythm = (layout: PublishLayoutId, surface: PublishSurface): PublishRhythm => {
+  const desktop = PUBLISH_LAYOUT_RHYTHM[layout];
+  if (surface !== "phone") return desktop;
+  return {
+    fontSize: PHONE_ARTICLE_RHYTHM.fontSize,
+    lineHeight: PHONE_ARTICLE_RHYTHM.lineHeight,
+    paragraphSpacing: PHONE_ARTICLE_RHYTHM.paragraphSpacing,
+    headingAlign: desktop.headingAlign,
+  };
+};
+
 export const PUBLISH_LAYOUT_RHYTHM: Record<PublishLayoutId, PublishRhythm> = {
   letter: { fontSize: "15px", lineHeight: "1.9", paragraphSpacing: "24px", headingAlign: "center" },
   guide: { fontSize: "15px", lineHeight: "1.8", paragraphSpacing: "16px", headingAlign: "left" },
   blueprint: { fontSize: "16px", lineHeight: "1.8", paragraphSpacing: "20px", headingAlign: "left" },
   journal: { fontSize: "16px", lineHeight: "1.9", paragraphSpacing: "26px", headingAlign: "left" },
+  stance: { fontSize: "16px", lineHeight: "1.8", paragraphSpacing: "20px", headingAlign: "left" },
+  stub: { fontSize: "15px", lineHeight: "1.9", paragraphSpacing: "32px", headingAlign: "left" },
+  brief: { fontSize: "15px", lineHeight: "1.9", paragraphSpacing: "24px", headingAlign: "left" },
+  outline: { fontSize: "16px", lineHeight: "1.8", paragraphSpacing: "22px", headingAlign: "left" },
+  zen: { fontSize: "16px", lineHeight: "2", paragraphSpacing: "32px", headingAlign: "left" },
+  grove: { fontSize: "15px", lineHeight: "1.9", paragraphSpacing: "24px", headingAlign: "left" },
 };
 
 export const publishEditorCssVars = (
   layout: PublishLayoutId,
   paletteId: PublishPaletteId,
+  surface: PublishSurface = "desktop",
 ): Record<string, string> => {
-  const rhythm = PUBLISH_LAYOUT_RHYTHM[layout] ?? PUBLISH_LAYOUT_RHYTHM[DEFAULT_PUBLISH_LAYOUT];
+  const rhythm = resolvePublishRhythm(layout, surface);
   const palette = PUBLISH_PALETTES[paletteId] ?? PUBLISH_PALETTES[DEFAULT_PUBLISH_PALETTE];
   return {
     "--editor-body-font-size": rhythm.fontSize,
@@ -293,8 +339,10 @@ export type PublishTagStyles = Record<string, string>;
 export const buildPublishStyles = (
   layout: PublishLayoutId,
   palette: PublishPalette,
+  surface: PublishSurface = "desktop",
 ): PublishTagStyles => {
-  const rhythm = PUBLISH_LAYOUT_RHYTHM[layout];
+  const rhythm = resolvePublishRhythm(layout, surface);
+  const phone = surface === "phone";
   const align = rhythm.headingAlign;
   const h1AlignRules =
     layout === "letter"
@@ -309,20 +357,47 @@ export const buildPublishStyles = (
             "border-top": `3px solid ${palette.accent}`,
             "padding-top": "10px",
           }
-        : { "text-align": align };
+        : layout === "stance"
+          ? {
+              "text-align": "left",
+              "border-bottom": `6px solid ${palette.accent}`,
+              "padding-bottom": "10px",
+            }
+          : layout === "stub"
+            ? {
+                "text-align": "left",
+                "letter-spacing": "0.12em",
+                "border-bottom": `1px dashed ${palette.accent}`,
+                "padding-bottom": "10px",
+              }
+            : layout === "outline"
+              ? {
+                  "text-align": "left",
+                  "letter-spacing": "0.06em",
+                  "border-bottom": `1px solid ${palette.divider}`,
+                  "padding-bottom": "10px",
+                }
+              : layout === "zen"
+                ? { "text-align": "left", "font-weight": "600" }
+                : { "text-align": align };
 
   const h2Rules =
-    layout === "guide" || layout === "blueprint"
+    layout === "guide" || layout === "blueprint" || layout === "stance"
       ? {
-          "border-left": `4px solid ${palette.accent}`,
+          "border-left": layout === "stance" ? `6px solid ${palette.accent}` : `4px solid ${palette.accent}`,
           "padding-left": "12px",
         }
-      : layout === "journal"
+      : layout === "journal" || layout === "grove"
         ? {
             "border-bottom": `1px solid ${palette.divider}`,
             "padding-bottom": "8px",
           }
-        : {};
+        : layout === "stub"
+          ? {
+              "border-bottom": `1px dashed ${palette.accentBorder}`,
+              "padding-bottom": "8px",
+            }
+          : {};
 
   const h3Rules =
     layout === "letter"
@@ -331,39 +406,63 @@ export const buildPublishStyles = (
           "border-bottom": `2px solid ${palette.accentBorder}`,
           "padding-bottom": "8px",
         }
-      : layout === "blueprint"
+      : layout === "blueprint" || layout === "stance"
         ? {
             "border-bottom": `2px solid ${palette.accent}`,
             "padding-bottom": "6px",
           }
-        : {};
+        : layout === "stub"
+          ? {
+              "border-bottom": `1px dashed ${palette.accentBorder}`,
+              "padding-bottom": "6px",
+            }
+          : {};
 
   const quoteRules =
-    layout === "letter"
+    layout === "letter" || layout === "grove"
       ? {
           margin: "0 0 28px",
           padding: "16px 18px",
           border: `1px solid ${palette.accentBorder}`,
-          "border-radius": "12px",
+          "border-radius": layout === "grove" ? "16px" : "12px",
           background: palette.surface,
           color: palette.textMuted,
         }
-      : layout === "journal"
+      : layout === "journal" || layout === "zen"
         ? {
             margin: "0 0 28px",
-            padding: "4px 0 4px 16px",
-            "border-left": `2px solid ${palette.divider}`,
+            padding: layout === "zen" ? "8px 0 8px 0" : "4px 0 4px 16px",
+            "border-left": layout === "zen" ? "0" : `2px solid ${palette.divider}`,
             background: "transparent",
             color: palette.textMuted,
             "font-style": "italic",
           }
-        : {
-            margin: "0 0 24px",
-            padding: "12px 16px",
-            "border-left": `4px solid ${palette.accent}`,
-            background: palette.accentSoft,
-            color: palette.textMuted,
-          };
+        : layout === "stub"
+          ? {
+              margin: "0 0 28px",
+              padding: "14px 16px",
+              border: `1px dashed ${palette.accent}`,
+              "border-radius": "2px",
+              background: palette.surface,
+              color: palette.textMuted,
+            }
+          : layout === "outline"
+            ? {
+                margin: "0 0 24px",
+                padding: "12px 16px",
+                border: `1px solid ${palette.divider}`,
+                background: "transparent",
+                color: palette.textMuted,
+              }
+            : {
+                margin: "0 0 24px",
+                padding: "12px 16px",
+                "border-left": layout === "stance" ? `6px solid ${palette.accent}` : `4px solid ${palette.accent}`,
+                background: palette.accentSoft,
+                color: palette.textMuted,
+              };
+
+  const quote = phone ? { ...quoteRules, margin: "0 0 14px", padding: "10px 12px" } : quoteRules;
 
   return {
     root: css({
@@ -382,25 +481,30 @@ export const buildPublishStyles = (
       color: palette.text,
     }),
     h1: css({
-      margin: "0 0 24px",
-      "font-size": layout === "journal" ? "26px" : "24px",
-      "line-height": "1.35",
-      "font-weight": "800",
-      color: palette.textStrong,
       ...h1AlignRules,
+      margin: phone ? "0 0 12px" : "0 0 24px",
+      "font-size": phone
+        ? PHONE_ARTICLE_RHYTHM.h1Size
+        : layout === "journal" || layout === "zen"
+          ? "26px"
+          : "24px",
+      "line-height": phone ? "1.4" : "1.35",
+      "font-weight": "800",
+      ...(phone ? { "letter-spacing": "0.02em" } : {}),
+      color: palette.textStrong,
     }),
     h2: css({
-      margin: "28px 0 16px",
-      "font-size": "20px",
-      "line-height": "1.4",
-      "font-weight": "700",
+      margin: phone ? "18px 0 10px" : "28px 0 16px",
+      "font-size": phone ? PHONE_ARTICLE_RHYTHM.h2Size : "20px",
+      "line-height": "1.35",
+      "font-weight": phone ? "600" : "700",
       color: palette.textStrong,
       "text-align": "left",
       ...h2Rules,
     }),
     h3: css({
-      margin: "24px 0 12px",
-      "font-size": layout === "letter" ? "15px" : "16px",
+      margin: phone ? "14px 0 8px" : "24px 0 12px",
+      "font-size": phone ? PHONE_ARTICLE_RHYTHM.h3Size : layout === "letter" ? "15px" : "16px",
       "line-height": "1.45",
       "font-weight": "700",
       color: palette.textStrong,
@@ -408,7 +512,7 @@ export const buildPublishStyles = (
     }),
     blockquote: css({
       "line-height": rhythm.lineHeight,
-      ...quoteRules,
+      ...quote,
     }),
     ul: css({
       margin: "0 0 1em",
@@ -505,8 +609,16 @@ const THEME_BLOCK_LABELS: Record<string, string> = {
   chapter: "章节",
 };
 
-const themeBlockStyles = (kind: string, palette: PublishPalette, layout: PublishLayoutId) => {
-  const label = `padding: 10px 14px 0; color: ${palette.accent}; font-size: 12px; font-weight: 700; letter-spacing: 1px; margin: 0;`;
+const themeBlockStyles = (
+  kind: string,
+  palette: PublishPalette,
+  layout: PublishLayoutId,
+  surface: PublishSurface = "desktop",
+) => {
+  const phone = surface === "phone";
+  const label = phone
+    ? `padding: 8px 12px 0; color: ${palette.accent}; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; margin: 0;`
+    : `padding: 10px 14px 0; color: ${palette.accent}; font-size: 12px; font-weight: 700; letter-spacing: 1px; margin: 0;`;
   if (kind === "chapter") {
     return {
       block: `margin: 28px 0 16px; padding: 0 0 4px; border-top: 3px solid ${palette.accent}; color: ${palette.textStrong};`,
@@ -515,7 +627,9 @@ const themeBlockStyles = (kind: string, palette: PublishPalette, layout: Publish
   }
   if (layout === "letter" || kind === "key-point") {
     return {
-      block: `margin: 20px 0; padding: 0 0 4px; border: 1px solid ${palette.accentBorder}; border-radius: 12px; background: ${palette.surface}; color: ${palette.text};`,
+      block: phone
+        ? `margin: 12px 0; padding: 0 0 2px; border: 1px solid ${palette.accentBorder}; border-radius: 8px; background: ${palette.surface}; color: ${palette.text};`
+        : `margin: 20px 0; padding: 0 0 4px; border: 1px solid ${palette.accentBorder}; border-radius: 12px; background: ${palette.surface}; color: ${palette.text};`,
       label,
     };
   }
@@ -526,7 +640,9 @@ const themeBlockStyles = (kind: string, palette: PublishPalette, layout: Publish
     };
   }
   return {
-    block: `margin: 20px 0; padding: 0 0 4px; border-left: 5px solid ${palette.accent}; background: ${palette.accentSoft}; color: ${palette.text};`,
+    block: phone
+      ? `margin: 12px 0; padding: 0 0 2px; border-left: 3px solid ${palette.accent}; background: ${palette.accentSoft}; color: ${palette.text};`
+      : `margin: 20px 0; padding: 0 0 4px; border-left: 5px solid ${palette.accent}; background: ${palette.accentSoft}; color: ${palette.text};`,
     label,
   };
 };
@@ -545,7 +661,12 @@ const wrapHeading = (heading: HTMLElement) => {
   return wrapper;
 };
 
-const decorateHeadings = (root: HTMLElement, layout: PublishLayoutId, palette: PublishPalette) => {
+const decorateHeadings = (
+  root: HTMLElement,
+  layout: PublishLayoutId,
+  palette: PublishPalette,
+  surface: PublishSurface = "desktop",
+) => {
   const headings = Array.from(root.querySelectorAll<HTMLElement>("h1, h2, h3")).filter((heading) => {
     if (heading.closest("table, pre, [data-edgeever-theme-block]")) return false;
     if (heading.closest("[data-ee-publish-heading]")) return false;
@@ -565,24 +686,29 @@ const decorateHeadings = (root: HTMLElement, layout: PublishLayoutId, palette: P
     label.setAttribute("data-ee-publish-chrome", "true");
     label.textContent = plan.chapterLabel;
     label.style.cssText = css({
-      margin: "28px 0 0",
+      margin: surface === "phone" ? "16px 0 0" : "28px 0 0",
       padding: "0",
       color: palette.accent,
-      "font-size": layout === "letter" ? "28px" : "13px",
+      "font-size": surface === "phone" ? "15px" : layout === "letter" ? "28px" : "13px",
       "line-height": "1.1",
       "font-weight": "700",
       "font-style": layout === "letter" ? "italic" : "normal",
-      "letter-spacing": layout === "blueprint" ? "0.12em" : "0",
+      "letter-spacing": layout === "blueprint" ? "0.08em" : "0",
     });
     wrapper.insertBefore(label, heading);
-    heading.style.margin = "6px 0 16px";
+    heading.style.margin = surface === "phone" ? "4px 0 10px" : "6px 0 16px";
   }
 };
 
-const applyThemeBlocks = (root: HTMLElement, layout: PublishLayoutId, palette: PublishPalette) => {
+const applyThemeBlocks = (
+  root: HTMLElement,
+  layout: PublishLayoutId,
+  palette: PublishPalette,
+  surface: PublishSurface = "desktop",
+) => {
   root.querySelectorAll<HTMLElement>("[data-edgeever-theme-block]").forEach((block) => {
     const kind = block.getAttribute("data-theme-block-kind") || "intro";
-    const styles = themeBlockStyles(kind, palette, layout);
+    const styles = themeBlockStyles(kind, palette, layout, surface);
     block.style.cssText = `${styles.block}${block.style.cssText}`;
     const label = root.ownerDocument.createElement("p");
     label.setAttribute("data-ee-publish-chrome", "true");
@@ -610,9 +736,10 @@ export const applyPublishLayout = (
   root: HTMLElement,
   layout: PublishLayoutId = readPublishLayoutPreference(),
   paletteId: PublishPaletteId = readPublishPalettePreference(),
+  surface: PublishSurface = "desktop",
 ) => {
   const palette = PUBLISH_PALETTES[paletteId] ?? PUBLISH_PALETTES[DEFAULT_PUBLISH_PALETTE];
-  const styles = buildPublishStyles(layout, palette);
+  const styles = buildPublishStyles(layout, palette, surface);
   root.style.cssText = styles.root;
 
   root.querySelectorAll<HTMLElement>("*").forEach((element) => {
@@ -636,6 +763,28 @@ export const applyPublishLayout = (
     });
   });
 
-  decorateHeadings(root, layout, palette);
-  applyThemeBlocks(root, layout, palette);
+  decorateHeadings(root, layout, palette, surface);
+  applyThemeBlocks(root, layout, palette, surface);
+};
+
+export const buildPhonePreviewHtml = (html: string, title = "", editorTheme?: string | null) => {
+  const root = document.createElement("div");
+  const trimmedTitle = title.trim();
+  if (trimmedTitle && !/^\s*<h1[\s>]/i.test(html)) {
+    const heading = document.createElement("h1");
+    heading.textContent = trimmedTitle;
+    root.appendChild(heading);
+  }
+  root.insertAdjacentHTML("beforeend", html);
+
+  const paper = resolvePaperEditorTheme(editorTheme);
+  if (paper) {
+    applyPublishLayout(root, paper.layout, paper.palette, "phone");
+  }
+
+  return {
+    html: root.innerHTML,
+    style: root.getAttribute("style") ?? "",
+    paper: Boolean(paper),
+  };
 };

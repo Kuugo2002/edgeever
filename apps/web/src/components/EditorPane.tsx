@@ -153,8 +153,10 @@ import {
   getNotebookMoveOptions,
   readDesktopReadingProtectionPreference,
   readEditorOutlineCollapsedPreference,
+  readEditorPhonePreviewPreference,
   writeDesktopReadingProtectionPreference,
   writeEditorOutlineCollapsedPreference,
+  writeEditorPhonePreviewPreference,
   type EditorContentAlignment,
   type MemoDocumentActionRequest,
   type ShortcutSettings,
@@ -162,6 +164,7 @@ import {
 import { copyEditorToWeChat, copyMarkdownToWeChat } from "@/lib/wechat-copy";
 import { isPaperEditorTheme, publishEditorCssVars, resolvePaperEditorTheme } from "@/lib/publish-layout";
 import { ThemeBlock } from "./ThemeBlock";
+import { EditorPhonePreview } from "./EditorPhonePreview";
 import { downloadMarkdownFile } from "@/lib/note-markdown-export";
 import { NOTE_HTML_FULL_STYLES } from "@/lib/note-html-export-assets";
 import { downloadNoteHtmlFile, getHtmlImageEmbedNoticeKind } from "@/lib/note-html-export";
@@ -606,6 +609,7 @@ const RichEditorPane = ({
   const [isMarkdownMode, setIsMarkdownMode] = useState(false);
   const [mobileToolbarOpen, setMobileToolbarOpen] = useState(false);
   const [editorOutlineCollapsed, setEditorOutlineCollapsed] = useState(readEditorOutlineCollapsedPreference);
+  const [phonePreviewOpen, setPhonePreviewOpen] = useState(readEditorPhonePreviewPreference);
   const [wechatCopyState, setWechatCopyState] = useState<"idle" | "copying" | "copied" | "error">("idle");
   const [memoIdCopyNotice, setMemoIdCopyNotice] = useState<{ status: "copied" | "error"; id: string } | null>(null);
   const handledSaveAndSyncTokenRef = useRef(saveAndSyncToken);
@@ -682,6 +686,11 @@ const RichEditorPane = ({
   const handleEditorOutlineCollapsedChange = useCallback((collapsed: boolean) => {
     setEditorOutlineCollapsed(collapsed);
     writeEditorOutlineCollapsedPreference(collapsed);
+  }, []);
+
+  const handlePhonePreviewChange = useCallback((open: boolean) => {
+    setPhonePreviewOpen(open);
+    writeEditorPhonePreviewPreference(open);
   }, []);
 
   const toggleEditorOutline = useCallback(() => {
@@ -4135,6 +4144,8 @@ const RichEditorPane = ({
             onPickExternalLink={openExternalLinkDialog}
             externalLinkActive={externalLinkActive}
             onPickNoteLink={() => setNoteLinkPickerOpen(true)}
+            phonePreview={phonePreviewOpen}
+            onPhonePreviewChange={handlePhonePreviewChange}
           />
         )}
         <EditorSaveRecoveryBanner
@@ -4153,9 +4164,15 @@ const RichEditorPane = ({
       <div
         ref={setEditorScrollContainerRef}
         data-editor-theme={isNamedEditorTheme(editorTheme) ? editorTheme : "custom"}
+        data-paper-theme={isPaperEditorTheme(editorTheme) ? "true" : undefined}
+        data-publish-surface={isMobileViewport ? "phone" : "desktop"}
         style={{
           ...(isPaperEditorTheme(editorTheme)
-            ? publishEditorCssVars(editorTheme, resolvePaperEditorTheme(editorTheme)?.palette ?? "emerald")
+            ? publishEditorCssVars(
+                editorTheme,
+                resolvePaperEditorTheme(editorTheme)?.palette ?? "emerald",
+                isMobileViewport ? "phone" : "desktop",
+              )
             : {
                 "--editor-body-font-size": `${MEMO_CONTENT_STYLE.body.fontSize}px`,
                 "--editor-body-line-height": String(MEMO_CONTENT_STYLE.body.lineHeight / MEMO_CONTENT_STYLE.body.fontSize),
@@ -4320,7 +4337,10 @@ const RichEditorPane = ({
               </div>
             )}
           </div>
-          {!isMobileViewport && !useMobilePlainTextEditor && !useMarkdownSourceEditor && (
+          {!isMobileViewport && !useMobilePlainTextEditor && !useMarkdownSourceEditor && phonePreviewOpen && (
+            <EditorPhonePreview editor={editor} title={getEditableMemoTitle(memo?.title)} />
+          )}
+          {!isMobileViewport && !useMobilePlainTextEditor && !useMarkdownSourceEditor && !phonePreviewOpen && (
             <EditorOutline
               editor={editor}
               scrollContainer={editorScrollContainer}
